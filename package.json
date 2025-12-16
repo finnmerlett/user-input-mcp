@@ -1,0 +1,35 @@
+{
+  "name": "user-prompt-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for user prompts using Electron dialog",
+  "type": "module",
+  "main": "./build/index.js",
+  "bin": {
+    "user-prompt-mcp": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node build/index.js",
+    "prompt": "electron --import tsx src/electron-prompt.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["mcp", "model-context-protocol", "user-prompt", "cli"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "@anthropic-ai/tokenizer": "^0.0.4",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "electron": "^33.2.0",
+    "tsx": "^4.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.6.0"
+  }
+}

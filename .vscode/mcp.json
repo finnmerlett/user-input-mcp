@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "user-prompt": {
+      "command": "node",
+      "args": ["/Users/finnmerlett/Repos/custom-user-prompt-mcp/build/index.js"]
+    },
+    "wait": {
+      "command": "bash",
+      "args": ["/Users/finnmerlett/Repos/custom-user-prompt-mcp/other/wait-mcp.sh"]
+    }
+  }
+}
