@@ -8,13 +8,18 @@
     "user-prompt-mcp": "./build/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/*.cjs build/",
     "watch": "tsc --watch",
     "start": "node build/index.js",
     "prompt": "electron --import tsx src/electron-prompt.ts",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["mcp", "model-context-protocol", "user-prompt", "cli"],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "user-prompt",
+    "cli"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -22,6 +27,7 @@
     "@anthropic-ai/tokenizer": "^0.0.4",
     "@modelcontextprotocol/sdk": "^1.0.4",
     "electron": "^33.2.0",
+    "marked": "^17.0.1",
     "tsx": "^4.19.0"
   },
   "devDependencies": {

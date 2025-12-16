@@ -6,12 +6,17 @@ const args = process.argv.slice(2)
 const promptText = args[0] || 'Enter input:'
 const titleText = args[1] || 'User Prompt'
 
+/** @type {any} */
+let marked
+
 /** @type {Electron.BrowserWindow | null} */
 let mainWindow = null
 let submitted = false
 
 const MIN_HEIGHT = 200
-const MAX_HEIGHT = 600
+let MAX_HEIGHT = 600
+let MAX_MESSAGE_HEIGHT = 300
+let MAX_INPUT_HEIGHT = 150
 
 /**
  * Escape HTML special characters
@@ -28,6 +33,15 @@ function escapeHtml(text) {
 }
 
 function createWindow() {
+  const { screen } = require('electron')
+  const primaryDisplay = screen.getPrimaryDisplay()
+  const { height: screenHeight, width: screenWidth, x: screenX, y: screenY } = primaryDisplay.workArea
+  
+  const width = 500
+  const height = MIN_HEIGHT
+  const x = screenX + Math.floor((screenWidth - width) / 2)
+  const y = screenY + Math.floor((screenHeight - height) / 2.5)
+
   const isDark = nativeTheme.shouldUseDarkColors
   const bgColor = isDark ? '#1e1e1e' : '#ffffff'
   const textColor = isDark ? '#fff' : '#000'
@@ -36,10 +50,14 @@ function createWindow() {
   const labelColor = isDark ? '#ccc' : '#333'
   const cancelBg = isDark ? '#3c3c3c' : '#e0e0e0'
   const cancelHover = isDark ? '#4a4a4a' : '#d0d0d0'
+  const linkColor = isDark ? '#6ebbfd' : '#0066cc'
+  const codeBg = isDark ? '#3e3e3e' : '#f0f0f0'
 
   mainWindow = new BrowserWindow({
-    width: 500,
-    height: MIN_HEIGHT,
+    width,
+    height,
+    x,
+    y,
     minHeight: MIN_HEIGHT,
     maxHeight: MAX_HEIGHT,
     resizable: true,
@@ -78,10 +96,37 @@ function createWindow() {
         }
         .prompt-label {
           font-size: 14px;
-          margin-bottom: 12px;
+          margin-bottom: 20px;
           color: ${labelColor};
           flex-shrink: 0;
+          line-height: 1.5;
         }
+        .prompt-label a { color: ${linkColor}; }
+        .prompt-label ul, .prompt-label ol { margin-left: 20px; margin-bottom: 8px; }
+        .prompt-label p { margin-bottom: 8px; }
+        .prompt-label p:last-child { margin-bottom: 0; }
+        .prompt-label code {
+          background: ${codeBg};
+          padding: 2px 4px;
+          border-radius: 3px;
+          font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+          font-size: 90%;
+        }
+        .prompt-label pre {
+            background: ${codeBg};
+            padding: 8px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-bottom: 8px;
+        }
+        .prompt-label pre code {
+            background: none;
+            padding: 0;
+        }
+        .prompt-label table { border-collapse: collapse; margin-bottom: 8px; width: 100%; }
+        .prompt-label th, .prompt-label td { border: 1px solid ${inputBorder}; padding: 6px 8px; text-align: left; }
+        .prompt-label th { background: ${isDark ? '#333' : '#f5f5f5'}; }
+        .prompt-label hr { border: none; border-top: 1px solid ${inputBorder}; margin: 16px 0; }
         .input-container {
           flex: 1;
           display: flex;
@@ -141,7 +186,7 @@ function createWindow() {
       </style>
     </head>
     <body>
-      <div class="prompt-label">${escapeHtml(promptText)}</div>
+      <div class="prompt-label">${marked.parse(promptText)}</div>
       <div class="input-container">
         <textarea id="input" autofocus placeholder="Type your response..."></textarea>
       </div>
@@ -154,60 +199,69 @@ function createWindow() {
         const input = document.getElementById('input')
         const MIN_HEIGHT = ${MIN_HEIGHT}
         const MAX_HEIGHT = ${MAX_HEIGHT}
+        const MAX_MESSAGE_HEIGHT = ${MAX_MESSAGE_HEIGHT}
+        const MAX_INPUT_HEIGHT = ${MAX_INPUT_HEIGHT}
         const LINE_HEIGHT = 21 // 14px font * 1.5 line-height
         const EXTRA_BUFFER = 28
         let lastWindowHeight = MIN_HEIGHT
-        let lastVisualLines = 1
-        
-        function getVisualLineCount() {
-          // Temporarily reset height to get true scrollHeight
-          const currentHeight = input.style.height
-          input.style.height = 'auto'
-          const scrollHeight = input.scrollHeight
-          input.style.height = currentHeight
-          
-          // Calculate visual lines based on content height and line height
-          const padding = 20 // textarea padding (10px top + 10px bottom)
-          const contentHeight = scrollHeight - padding
-          return Math.max(1, Math.ceil(contentHeight / LINE_HEIGHT))
-        }
-        
         function autoGrow() {
-          const visualLines = getVisualLineCount()
-          
-          // Only resize when visual line count changes
-          if (visualLines === lastVisualLines) {
-            return
-          }
-          lastVisualLines = visualLines
-          
-          // Reset to get accurate scrollHeight
-          input.style.height = 'auto'
-          const scrollHeight = input.scrollHeight
-          const contentHeight = Math.max(60, scrollHeight)
-          input.style.height = contentHeight + 'px'
-          
-          // Calculate window height
-          const computedBodyStyle = getComputedStyle(document.body)
-          const bodyPaddingTop = parseInt(computedBodyStyle.paddingTop) || 20
-          const bodyPaddingBottom = parseInt(computedBodyStyle.paddingBottom) || 20
           const labelEl = document.querySelector('.prompt-label')
+          const inputContainer = document.querySelector('.input-container')
+          
+          // Capture scroll position
+          const labelScrollTop = labelEl.scrollTop
+
+          // 1. Reset to measure natural heights
+          input.style.height = 'auto'
+          input.style.overflowY = 'hidden' 
+          labelEl.style.height = 'auto'
+          labelEl.style.overflowY = 'hidden'
+          
+          const naturalInputHeight = Math.max(60, input.scrollHeight)
+          const naturalLabelHeight = labelEl.scrollHeight
+          
+          // 2. Apply caps
+          const finalLabelHeight = Math.min(naturalLabelHeight, MAX_MESSAGE_HEIGHT)
+          const finalInputHeight = Math.min(naturalInputHeight, MAX_INPUT_HEIGHT)
+          
+          // 3. Apply styles
+          labelEl.style.height = finalLabelHeight + 'px'
+          labelEl.style.overflowY = naturalLabelHeight > MAX_MESSAGE_HEIGHT ? 'auto' : 'hidden'
+          
+          // Restore scroll position
+          if (labelEl.style.overflowY === 'auto') {
+            labelEl.scrollTop = labelScrollTop
+          }
+
+          input.style.height = finalInputHeight + 'px'
+          input.style.overflowY = naturalInputHeight > MAX_INPUT_HEIGHT ? 'auto' : 'hidden'
+          
+          // 4. Calculate total window height
+          const computedBodyStyle = getComputedStyle(document.body)
+          const bodyPadding = (parseInt(computedBodyStyle.paddingTop) || 20) + (parseInt(computedBodyStyle.paddingBottom) || 20)
           const buttonsEl = document.querySelector('.buttons')
-          const labelHeight = labelEl.offsetHeight + (parseInt(getComputedStyle(labelEl).marginBottom) || 12)
           const buttonsHeight = buttonsEl.offsetHeight + (parseInt(getComputedStyle(buttonsEl).marginTop) || 16)
+          const labelMargin = parseInt(getComputedStyle(labelEl).marginBottom) || 20
           
-          const totalHeight = bodyPaddingTop + labelHeight + contentHeight + buttonsHeight + bodyPaddingBottom + EXTRA_BUFFER
+          const chromeHeight = bodyPadding + buttonsHeight + labelMargin + EXTRA_BUFFER
+          const totalHeight = finalLabelHeight + finalInputHeight + chromeHeight
+          
           const newWindowHeight = Math.min(Math.max(MIN_HEIGHT, totalHeight), MAX_HEIGHT)
-          
+
+          // 5. Resize window if needed
           if (newWindowHeight !== lastWindowHeight) {
             lastWindowHeight = newWindowHeight
             ipcRenderer.send('resize', Math.round(newWindowHeight))
           }
-          
-          input.style.overflowY = newWindowHeight >= MAX_HEIGHT ? 'auto' : 'hidden'
         }
         
-        input.addEventListener('input', autoGrow)
+        input.addEventListener('input', () => {
+          autoGrow()
+          // If at max height, ensure we scroll to bottom to show padding
+          if (input.scrollHeight > input.clientHeight) {
+             input.scrollTop = input.scrollHeight
+          }
+        })
         
         input.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
@@ -229,6 +283,7 @@ function createWindow() {
         }
         
         input.focus()
+        setTimeout(autoGrow, 100)
       </script>
     </body>
     </html>
@@ -247,8 +302,14 @@ function createWindow() {
 
 ipcMain.on('resize', (_event, height) => {
   if (mainWindow) {
-    const [width] = mainWindow.getSize()
-    mainWindow.setSize(width, height)
+    const { screen } = require('electron')
+    const primaryDisplay = screen.getPrimaryDisplay()
+    const { height: screenHeight, y: screenY } = primaryDisplay.workArea
+    
+    const bounds = mainWindow.getBounds()
+    const newY = screenY + Math.floor((screenHeight - height) / 2.5)
+    
+    mainWindow.setBounds({ ...bounds, y: newY, height })
   }
 })
 
@@ -264,7 +325,19 @@ ipcMain.on('cancel', () => {
   app.quit()
 })
 
-app.whenReady().then(createWindow)
+app.whenReady().then(async () => {
+  const { screen } = require('electron')
+  const primaryDisplay = screen.getPrimaryDisplay()
+  const workAreaHeight = primaryDisplay.workAreaSize.height
+  MAX_HEIGHT = Math.floor(workAreaHeight * 0.9) // Overall max safety
+  MAX_MESSAGE_HEIGHT = Math.floor(workAreaHeight * 0.5)
+  MAX_INPUT_HEIGHT = Math.floor(workAreaHeight * 0.25)
+
+  const mod = await import('marked')
+  marked = mod.marked
+  marked.use({ breaks: true })
+  createWindow()
+})
 
 app.on('window-all-closed', () => {
   app.quit()
