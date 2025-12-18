@@ -4,7 +4,7 @@ const { app, BrowserWindow, ipcMain, nativeTheme } = require('electron')
 // Get prompt and title from command line args
 const args = process.argv.slice(2)
 const promptText = args[0] || 'Enter input:'
-const titleText = args[1] || 'User Prompt'
+const titleText = args[1] || 'User Input'
 
 /** @type {any} */
 let marked

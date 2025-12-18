@@ -1,7 +1,7 @@
 {
   "servers": {
     "user-input": {
-      "command": "user-prompt-mcp",
+      "command": "user-input-mcp",
       "args": []
     }
   }

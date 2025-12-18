@@ -1,11 +1,11 @@
 {
-  "name": "user-prompt-mcp",
+  "name": "user-input-mcp",
   "version": "1.0.0",
-  "description": "MCP server for user prompts using Electron dialog",
+  "description": "MCP server for user input using Electron dialog",
   "type": "module",
   "main": "./build/index.js",
   "bin": {
-    "user-prompt-mcp": "./build/index.js"
+    "user-input-mcp": "./build/index.js"
   },
   "scripts": {
     "build": "tsc && cp src/*.cjs build/",
@@ -16,7 +16,7 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "user-prompt",
+    "user-input",
     "electron",
     "dialog"
   ],

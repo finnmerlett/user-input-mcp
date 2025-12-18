@@ -1,10 +1,10 @@
-# User Prompt MCP Server
+# User Input MCP Server
 
-A Model Context Protocol (MCP) server that provides a `user_prompt` tool for requesting input from users via CLI.
+A Model Context Protocol (MCP) server that provides a `user_input` tool for requesting input from users via CLI.
 
 ## Features
 
-- GUI-based user prompts using Electron dialogs
+- GUI-based user input using Electron dialogs
 - Built with TypeScript and the official MCP SDK
 - 120-minute timeout for user input
 - Easy integration with any MCP client (like Claude Desktop or VS Code)
@@ -39,9 +39,9 @@ Add to your MCP client configuration (e.g., `~/Library/Application Support/Claud
 ```json
 {
   "mcpServers": {
-    "user-prompt": {
+    "user-input": {
       "command": "node",
-      "args": ["/path/to/user-prompt-mcp/build/index.js"]
+      "args": ["/path/to/user-input-mcp/build/index.js"]
     }
   }
 }
@@ -52,8 +52,8 @@ Or if installed globally:
 ```json
 {
   "mcpServers": {
-    "user-prompt": {
-      "command": "user-prompt-mcp"
+    "user-input": {
+      "command": "user-input-mcp"
     }
   }
 }
@@ -63,7 +63,7 @@ Or if installed globally:
 
 The server provides one tool:
 
-**`user_prompt`**
+**`user_input`**
 - **Description**: Request additional input from the user during generation
 - **Parameters**:
   - `prompt` (required): The prompt to display to the user
@@ -72,7 +72,7 @@ The server provides one tool:
 **Example**:
 ```json
 {
-  "name": "user_prompt",
+  "name": "user_input",
   "arguments": {
     "prompt": "What is your preferred color scheme?",
     "title": "Configuration"
@@ -99,7 +99,7 @@ npm start
 
 ## How It Works
 
-The server spawns an Electron process to display a GUI dialog. When the `user_prompt` tool is called:
+The server spawns an Electron process to display a GUI dialog. When the `user_input` tool is called:
 
 1. The server launches an Electron dialog with the prompt
 2. The user enters their response in the dialog window

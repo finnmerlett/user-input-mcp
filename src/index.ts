@@ -17,13 +17,13 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 /**
- * User Prompt MCP Server
+ * User Input MCP Server
  *
- * This MCP server provides a tool for prompting the user for input via Electron dialog.
+ * This MCP server provides a tool for requesting user input via Electron dialog.
  */
 
-const USER_PROMPT_TOOL: Tool = {
-  name: 'user_prompt',
+const USER_INPUT_TOOL: Tool = {
+  name: 'user_input',
   description: 'Request additional input from the user during generation',
   inputSchema: {
     type: 'object',
@@ -72,7 +72,7 @@ async function promptUser(prompt: string, title?: string): Promise<string> {
       return
     }
 
-    const child = spawn(electronPath, [scriptPath, prompt, title || 'User Prompt'], {
+    const child = spawn(electronPath, [scriptPath, prompt, title || 'User Input'], {
       stdio: ['ignore', 'pipe', 'inherit'],
       env: { ...process.env, ELECTRON_RUN_AS_NODE: '' },
     })
@@ -114,7 +114,7 @@ async function promptUser(prompt: string, title?: string): Promise<string> {
 async function main() {
   const server = new Server(
     {
-      name: 'user-prompt-mcp',
+      name: 'user-input-mcp',
       version: '1.0.0',
     },
     {
@@ -126,12 +126,12 @@ async function main() {
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
-      tools: [USER_PROMPT_TOOL],
+      tools: [USER_INPUT_TOOL],
     }
   })
 
   server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
-    if (request.params.name !== 'user_prompt') {
+    if (request.params.name !== 'user_input') {
       throw new Error(`Unknown tool: ${request.params.name}`)
     }
 
@@ -165,7 +165,7 @@ async function main() {
   const transport = new StdioServerTransport()
   await server.connect(transport)
 
-  console.error('User Prompt MCP Server started')
+  console.error('User Input MCP Server started')
 }
 
 await main()
