@@ -46,18 +46,18 @@ const USER_PROMPT_TOOL: Tool = {
  */
 async function promptUser(prompt: string, title?: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    // Use the actual Electron binary path (not the CLI wrapper)
-    const electronPath = join(
-      __dirname,
-      '..',
-      'node_modules',
-      'electron',
-      'dist',
-      'Electron.app',
-      'Contents',
-      'MacOS',
-      'Electron',
-    )
+    // Get platform-specific Electron binary path
+    const electronModule = join(__dirname, '..', 'node_modules', 'electron')
+    let electronPath: string
+    
+    if (process.platform === 'darwin') {
+      electronPath = join(electronModule, 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron')
+    } else if (process.platform === 'win32') {
+      electronPath = join(electronModule, 'dist', 'electron.exe')
+    } else {
+      electronPath = join(electronModule, 'dist', 'electron')
+    }
+    
     // Use absolute path to the electron-prompt script
     const scriptPath = join(__dirname, 'electron-prompt.cjs')
 

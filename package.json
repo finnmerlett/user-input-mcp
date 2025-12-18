@@ -11,24 +11,21 @@
     "build": "tsc && cp src/*.cjs build/",
     "watch": "tsc --watch",
     "start": "node build/index.js",
-    "prompt": "electron --import tsx src/electron-prompt.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",
     "model-context-protocol",
     "user-prompt",
-    "cli"
+    "electron",
+    "dialog"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.52.0",
-    "@anthropic-ai/tokenizer": "^0.0.4",
     "@modelcontextprotocol/sdk": "^1.0.4",
     "electron": "^33.2.0",
-    "marked": "^17.0.1",
-    "tsx": "^4.19.0"
+    "marked": "^17.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
