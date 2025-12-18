@@ -4,9 +4,9 @@ A Model Context Protocol (MCP) server that provides a `user_prompt` tool for req
 
 ## Features
 
-- Simple CLI-based user prompts using readline
+- GUI-based user prompts using Electron dialogs
 - Built with TypeScript and the official MCP SDK
-- 10-minute timeout for user input
+- 120-minute timeout for user input
 - Easy integration with any MCP client (like Claude Desktop or VS Code)
 
 ## Installation
@@ -99,12 +99,12 @@ npm start
 
 ## How It Works
 
-The server uses Node.js's built-in `readline` module to create an interactive CLI prompt. When the `user_prompt` tool is called:
+The server spawns an Electron process to display a GUI dialog. When the `user_prompt` tool is called:
 
-1. The server displays the prompt to the user via stdio
-2. The user enters their response
+1. The server launches an Electron dialog with the prompt
+2. The user enters their response in the dialog window
 3. The response is returned to the MCP client
-4. If no input is provided within 10 minutes, the request times out
+4. If no input is provided within 120 minutes, the request times out
 
 ## License
 
