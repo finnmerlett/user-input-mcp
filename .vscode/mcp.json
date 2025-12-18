@@ -1,8 +1,8 @@
 {
   "servers": {
     "user-input": {
-      "command": "node",
-      "args": ["/Users/finnmerlett/Repos/custom-user-prompt-mcp/build/index.js"]
-    },
+      "command": "user-prompt-mcp",
+      "args": []
+    }
   }
 }
