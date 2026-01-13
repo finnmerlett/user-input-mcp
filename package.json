@@ -10,7 +10,7 @@
   "scripts": {
     "cleanup": "rm -rf build",
     "build": "tsc",
-    "postbuild": "cp lib/*.cjs build/",
+    "postbuild": "cp lib/*.cjs build/ && cp -r src/docs build/docs",
     "watch": "tsc --watch",
     "start": "node build/index.js",
     "prepublishOnly": "npm run build"

@@ -9,6 +9,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js'
 
 import { AVAILABLE_TOOLS, isValidToolName } from './tools/index.js'
+import { readInstructions } from './utils/instructions.js'
 
 
 
@@ -17,6 +18,9 @@ import { AVAILABLE_TOOLS, isValidToolName } from './tools/index.js'
 */
 async function main() {
   const tools = Object.values(AVAILABLE_TOOLS)
+
+  // Read the server instructions
+  const instructions = readInstructions();
 
   /**
    * User Input MCP Server
@@ -32,6 +36,7 @@ async function main() {
       capabilities: {
         tools: {},
       },
+      instructions,
     },
   )
 
