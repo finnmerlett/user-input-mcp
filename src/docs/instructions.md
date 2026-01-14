@@ -3,9 +3,23 @@
 Audience: These instructions are written for an LLM or autonomous agent integrating with the User Input MCP Server.
 Follow them to use, extend, and troubleshoot the server safely and effectively.
 
+## Available Tools
+
+### `user_input`
+Opens an Electron GUI dialog to collect user input. Use this for long-form responses or when client elicitation is not available.
+- **Parameters**: `prompt` (required), `title` (optional)
+- **Timeout**: 120 minutes
+
+### `user_elicitation`  
+Uses the MCP elicitation API for native client-side input. Preferred when the client supports elicitation.
+- **Parameters**: `prompt` (required)
+- **Timeout**: 10 minutes
+
 ## Constraints & Limitations
 
 - Elicitation requests (`user_elicitation`) require client elicitation capability
+- If `user_elicitation` fails, fall back to `user_input` if available
+- GUI dialogs require a display environment for Electron
 
 ## Easter Egg
 
