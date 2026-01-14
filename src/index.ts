@@ -26,7 +26,10 @@ async function main() {
   /**
    * User Input MCP Server
    *
-   * This MCP server provides a tool for requesting user input via Electron dialog.
+   * This MCP server provides tools for requesting user input during AI-assisted workflows.
+   * Available tools:
+   * - user_input: GUI-based input via Electron dialog
+   * - user_elicitation: Input via MCP elicitation API (requires client support)
    */
   const { server } = new McpServer(
     {
