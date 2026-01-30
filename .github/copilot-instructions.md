@@ -8,6 +8,10 @@ If you are a sub-agent, try and be as autonomous as possible and only ask for in
 
 ---------
 
+### General User Interactions
+
+If the user ever skips a tool use you are trying to run, or you see `^C` or similar in a terminal command output, ALWAYS ask the user for clarification on what to do next using a `user-input` mcp tool.
+
 ### Story-Driven Development Workflow
 
 When developing new features, follow this workflow:
@@ -26,8 +30,8 @@ When developing new features, follow this workflow:
 
 ### Critical Final Step
 
-**BEFORE COMPLETING ANY TASK (unless you are a sub-agent)**: Check for user input using the USER INPUT MCP COMMAND
+**BEFORE COMPLETING ANY TASK (unless you are a sub-agent)**: Check for user input using a USER INPUT MCP TOOL
 NOTE: if the user input command fails, ALWAYS retry it at least once before moving on.
 
-Unless you are a sub-agent, DO NOT STOP UNTIL THE TASK IS COMPLETED AND YOU HAVE CHECKED FOR USER INPUT USING THE USER INPUT MCP COMMAND.
+Unless you are a sub-agent, DO NOT STOP UNTIL THE TASK IS COMPLETED AND YOU HAVE CHECKED FOR USER INPUT USING A USER INPUT MCP TOOL.
 

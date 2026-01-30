@@ -109,13 +109,13 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
 - [x] Update TypeScript config if needed for ext-apps types (none needed)
 - [x] Verify build still works
 
-### Phase 2: Tool Implementation
+### Phase 2: Tool Implementation ✅
 
-- [ ] Create `src/tools/apps-user-input.ts`
-- [ ] Define tool schema with prompt/title/options parameters
-- [ ] Register tool with `_meta.ui.resourceUri`
-- [ ] Register UI resource handler for `ui://user-input/form.html`
-- [ ] Implement tool handler that waits for form submission
+- [x] Create `src/tools/apps-user-input.ts`
+- [x] Define tool schema with prompt/title/options parameters
+- [x] Register tool with `_meta.ui.resourceUri`
+- [x] Export UI resource config (handler to be integrated in Phase 4)
+- [x] Implement tool handler (returns args for UI to use)
 
 ### Phase 3: UI Implementation
 
@@ -132,8 +132,8 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
 
 ### Phase 4: Integration
 
-- [ ] Export tool in `src/tools/index.ts`
-- [ ] Add tool name constant
+- [x] Export tool in `src/tools/index.ts`
+- [x] Add tool name constant
 - [ ] Manual test with VS Code Insiders
 - [ ] Verify theme integration (light/dark)
 
