@@ -95,7 +95,7 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
 
 ### Files to Create/Modify
 
-- [ ] `package.json` - Add ext-apps dependency
+- [x] `package.json` - Add ext-apps dependency ✅ v1.0.1 installed
 - [ ] `src/tools/apps-user-input.ts` - New tool implementation
 - [ ] `src/tools/index.ts` - Register new tool
 - [ ] `src/ui/input-form.html` - HTML form UI (bundled inline)
@@ -103,11 +103,11 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
 
 ## Implementation Tasks
 
-### Phase 1: Setup & Dependencies
+### Phase 1: Setup & Dependencies ✅
 
-- [ ] Install `@modelcontextprotocol/ext-apps` package
-- [ ] Update TypeScript config if needed for ext-apps types
-- [ ] Verify build still works
+- [x] Install `@modelcontextprotocol/ext-apps` package (v1.0.1)
+- [x] Update TypeScript config if needed for ext-apps types (none needed)
+- [x] Verify build still works
 
 ### Phase 2: Tool Implementation
 
