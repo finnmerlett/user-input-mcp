@@ -183,8 +183,10 @@ src/
 └── utils/
     └── instructions.ts   # Instructions loader utility
 docs/
-└── stories/              # Feature story documentation
-    └── NNN-feature-name.md
+├── stories/              # Feature story documentation
+│   └── NNN-feature-name.md
+└── templates/
+    └── NNN-story-template.md
 ```
 
 ## Development Workflow
