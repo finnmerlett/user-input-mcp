@@ -1,118 +1,37 @@
 #!/usr/bin/env node
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   type CallToolRequest,
-  type Tool,
+  type ServerNotification,
+  type ServerRequest,
 } from '@modelcontextprotocol/sdk/types.js'
-import { spawn } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
-import { existsSync } from 'node:fs'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-/**
- * User Input MCP Server
- *
- * This MCP server provides a tool for requesting user input via Electron dialog.
- */
-
-const USER_INPUT_TOOL: Tool = {
-  name: 'user_input',
-  description: 'Request additional input from the user during generation',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      prompt: {
-        type: 'string',
-        description: 'The prompt to display to the user',
-      },
-      title: {
-        type: 'string',
-        description: 'The title of the input dialog (optional)',
-      },
-    },
-    required: ['prompt'],
-  },
-}
-
-/**
- * Show Electron dialog and get user input
- */
-async function promptUser(prompt: string, title?: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    // Get platform-specific Electron binary path
-    const electronModule = join(__dirname, '..', 'node_modules', 'electron')
-    let electronPath: string
-    
-    if (process.platform === 'darwin') {
-      electronPath = join(electronModule, 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron')
-    } else if (process.platform === 'win32') {
-      electronPath = join(electronModule, 'dist', 'electron.exe')
-    } else {
-      electronPath = join(electronModule, 'dist', 'electron')
-    }
-    
-    // Use absolute path to the electron-prompt script
-    const scriptPath = join(__dirname, 'electron-prompt.cjs')
-
-    // Verify paths exist
-    if (!existsSync(electronPath)) {
-      reject(new Error(`Electron binary not found at: ${electronPath}`))
-      return
-    }
-
-    if (!existsSync(scriptPath)) {
-      reject(new Error(`Electron script not found at: ${scriptPath}`))
-      return
-    }
-
-    const child = spawn(electronPath, [scriptPath, prompt, title || 'User Input'], {
-      stdio: ['ignore', 'pipe', 'inherit'],
-      env: { ...process.env, ELECTRON_RUN_AS_NODE: '' },
-    })
-
-    let output = ''
-
-    child.stdout.on('data', (data: Buffer) => {
-      output += data.toString()
-    })
-
-    child.on('close', (code) => {
-      if (output === '[CANCELLED]') {
-        reject(new Error('User cancelled the input'))
-      } else if (output.trim()) {
-        resolve(output.trim())
-      } else {
-        reject(new Error(`Dialog failed with code ${code}`))
-      }
-    })
-
-    child.on('error', (err) => {
-      reject(new Error(`Failed to launch dialog: ${err.message}`))
-    })
-
-    // Timeout after 120 minutes
-    setTimeout(
-      () => {
-        child.kill()
-        reject(new Error('User input timeout after 120 minutes'))
-      },
-      120 * 60 * 1000,
-    )
-  })
-}
+import { AVAILABLE_TOOLS, isValidToolName } from './tools/index.js'
+import { readInstructions } from './utils/instructions.js'
 
 /**
  * Create and run the MCP server
  */
 async function main() {
-  const server = new Server(
+  const tools = Object.values(AVAILABLE_TOOLS)
+
+  // Read the server instructions
+  const instructions = readInstructions()
+
+  /**
+   * User Input MCP Server
+   *
+   * This MCP server provides tools for requesting user input during AI-assisted workflows.
+   * Available tools:
+   * - user_input: GUI-based input via Electron dialog
+   * - user_elicitation: Input via MCP elicitation API (requires client support)
+   */
+  const { server } = new McpServer(
     {
       name: 'user-input-mcp',
       version: '1.0.0',
@@ -121,46 +40,39 @@ async function main() {
       capabilities: {
         tools: {},
       },
+      instructions,
     },
   )
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
-      tools: [USER_INPUT_TOOL],
+      tools,
     }
   })
 
-  server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
-    if (request.params.name !== 'user_input') {
-      throw new Error(`Unknown tool: ${request.params.name}`)
-    }
-
-    const args = request.params.arguments as {
-      prompt: string
-      title?: string
-    }
-
-    if (!args.prompt) {
-      throw new Error('Missing required argument: prompt')
-    }
-
-    try {
-      const userInput = await promptUser(args.prompt, args.title)
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: userInput,
-          },
-        ],
+  server.setRequestHandler(
+    CallToolRequestSchema,
+    async (
+      request: CallToolRequest,
+      extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
+    ) => {
+      if (!request.params || !request.params.name) {
+        throw new Error('Tool name is required')
       }
-    } catch (error) {
-      throw new Error(
-        `Failed to get user input: ${error instanceof Error ? error.message : String(error)}`,
-      )
-    }
-  })
+
+      if (!isValidToolName(request.params.name)) {
+        throw new Error(`Unknown tool: ${request.params.name}`)
+      }
+
+      try {
+        return await AVAILABLE_TOOLS[request.params.name].handler(request.params.arguments, extra)
+      } catch (error) {
+        throw new Error(
+          `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`,
+        )
+      }
+    },
+  )
 
   const transport = new StdioServerTransport()
   await server.connect(transport)

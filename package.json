@@ -8,7 +8,9 @@
     "user-input-mcp": "./build/index.js"
   },
   "scripts": {
-    "build": "tsc && cp src/*.cjs build/",
+    "cleanup": "rm -rf build",
+    "build": "tsc",
+    "postbuild": "cp lib/*.cjs build/ && cp -r src/docs build/docs",
     "watch": "tsc --watch",
     "start": "node build/index.js",
     "prepublishOnly": "npm run build"
@@ -23,16 +25,16 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
-    "electron": "^33.2.0",
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "electron": "^33.4.11",
     "marked": "^17.0.1"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "eslint": "^9.0.0",
-    "prettier": "^3.0.0",
-    "typescript": "^5.6.0"
+    "@types/node": "^22.19.6",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/parser": "^8.53.0",
+    "eslint": "^9.39.2",
+    "prettier": "^3.7.4",
+    "typescript": "^5.9.3"
   }
 }

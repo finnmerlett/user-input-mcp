@@ -1,8 +1,8 @@
 {
   "servers": {
-    "user-input": {
-      "command": "user-input-mcp",
-      "args": []
+    "user-input-local": {
+      "command": "node",
+      "args": ["${workspaceFolder}/build/index.js"]
     }
   }
 }
