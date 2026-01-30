@@ -28,10 +28,15 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
 
 1. Display a styled input form inline within the chat
 2. Show customizable title and prompt/question
-3. Provide text input field for user response
-4. Include Submit and Cancel buttons
-5. Return user input to the calling tool
-6. Handle submission, cancellation, and timeout gracefully
+3. Provide multiline text input that auto-expands as user types
+4. Support optional quick-action buttons (menu of predefined options)
+5. When a button is clicked:
+   - Return the selected option text to the agent
+   - Disable further input (grey out input box)
+   - Preserve visible content for chat history readability
+6. Include Submit and Cancel buttons for free-text submission
+7. Return user input to the calling tool
+8. Handle submission, cancellation, and timeout gracefully
 
 ### Non-Functional Requirements
 
@@ -55,7 +60,8 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
 │  │  │  │ HTML Form                                    │   │││
 │  │  │  │ - Title                                      │   │││
 │  │  │  │ - Prompt                                     │   │││
-│  │  │  │ - Input field                                │   │││
+│  │  │  │ - Quick option buttons (optional)            │   │││
+│  │  │  │ - Multiline auto-expanding textarea          │   │││
 │  │  │  │ - Submit/Cancel buttons                      │   │││
 │  │  │  └──────────────────────────────────────────────┘   │││
 │  │  │         ↕ postMessage (JSON-RPC)                    │││
@@ -73,12 +79,15 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
 
 ### Data Flow
 
-1. **Tool Call**: Agent calls `user_apps_input` with `{ prompt, title? }`
+1. **Tool Call**: Agent calls `user_apps_input` with `{ prompt, title?, options? }`
 2. **UI Render**: Host fetches `ui://user-input/form.html` resource and renders iframe
 3. **Tool Input**: Host sends `ui/notifications/tool-input` with arguments to iframe
-4. **User Interaction**: User fills form and clicks Submit/Cancel
-5. **Tool Response**: Form calls `app.callServerTool()` or sends message back
-6. **Result**: Server returns user input or cancellation message
+4. **User Interaction**: 
+   - User can click a quick-option button → immediately returns that option
+   - Or user types free text and clicks Submit
+   - Clicking button/submit disables further input, greys out form
+5. **Tool Response**: Form sends result back via App class
+6. **Result**: Server returns user input or selected option
 
 ### Dependencies
 
@@ -103,26 +112,29 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
 ### Phase 2: Tool Implementation
 
 - [ ] Create `src/tools/apps-user-input.ts`
-- [ ] Define tool schema with prompt/title parameters
+- [ ] Define tool schema with prompt/title/options parameters
 - [ ] Register tool with `_meta.ui.resourceUri`
 - [ ] Register UI resource handler for `ui://user-input/form.html`
 - [ ] Implement tool handler that waits for form submission
 
 ### Phase 3: UI Implementation
 
-- [ ] Create HTML form structure
+- [ ] Create HTML form structure with multiline textarea
+- [ ] Implement auto-expanding textarea behavior
+- [ ] Add optional quick-option buttons rendering
 - [ ] Add VS Code theme CSS variable support
 - [ ] Implement App class connection
 - [ ] Handle `ui/notifications/tool-input` for receiving arguments
-- [ ] Implement submit handler → call server tool
+- [ ] Implement submit handler → return free text
+- [ ] Implement button click handler → return selected option
 - [ ] Implement cancel handler
-- [ ] Add loading/disabled states
+- [ ] Add disabled/greyed-out state after submission
 
 ### Phase 4: Integration
 
 - [ ] Export tool in `src/tools/index.ts`
 - [ ] Add tool name constant
-- [ ] Test with VS Code Insiders
+- [ ] Manual test with VS Code Insiders
 - [ ] Verify theme integration (light/dark)
 
 ### Phase 5: Documentation & Polish
@@ -134,16 +146,22 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
 
 ## Testing Plan
 
-1. **Unit**: Tool registration, resource handler
-2. **Integration**: VS Code Insiders manual testing
-3. **UI**: Form rendering, theme switching, submit/cancel flows
-4. **Edge Cases**: Timeout, rapid submissions, special characters
+Manual testing with VS Code Insiders:
+
+1. **Basic Flow**: Call tool with prompt only, enter text, submit
+2. **With Options**: Call tool with options array, click button, verify return value
+3. **Theme**: Toggle VS Code light/dark theme, verify form adapts
+4. **Auto-expand**: Type long text, verify textarea grows
+5. **Disabled State**: After submission, verify form is greyed but visible
+6. **Cancel**: Click cancel, verify proper handling
+7. **Edge Cases**: Empty input, special characters, very long text
 
 ## Open Questions
 
-1. Should we support multi-line input (textarea)?
+1. ~~Should we support multi-line input (textarea)?~~ → ✅ Yes, multiline with auto-expand
 2. Should we support optional input validation?
 3. Should form persist partial input on host context changes?
+4. Maximum number of quick-option buttons to support?
 
 ## References
 
