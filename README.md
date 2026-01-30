@@ -182,7 +182,21 @@ src/
 │   └── elicitation.ts    # MCP elicitation API tool
 └── utils/
     └── instructions.ts   # Instructions loader utility
+docs/
+└── stories/              # Feature story documentation
+    └── NNN-feature-name.md
 ```
+
+## Development Workflow
+
+New features are developed using a story-driven workflow:
+
+1. **Story Definition**: Each feature starts with a story document in `docs/stories/NNN-feature-name.md`
+2. **Branch Creation**: Feature branches are created from `main` with naming convention `feature/NNN-feature-name`
+3. **Iterative Development**: Story docs contain detailed task breakdowns with checkboxes for tracking progress
+4. **Review & Merge**: Stories are reviewed before merging back to `main`
+
+See `docs/stories/` for active and completed feature stories.
 
 ## License
 
