@@ -55,14 +55,35 @@
     }
 
     h2.title {
-      margin: 0 0 8px 0;
+      margin: 0 0 12px 0;
       font-size: 1.1em;
       font-weight: 600;
     }
 
     .prompt {
-      margin: 0 0 12px 0;
-      white-space: pre-wrap;
+      margin: 0 0 16px 0;
+    }
+
+    /* Compact spacing for markdown elements inside prompt */
+    .prompt p,
+    .prompt ul,
+    .prompt ol,
+    .prompt pre,
+    .prompt blockquote {
+      margin: 0 0 0.75em 0;
+    }
+
+    .prompt p:last-child,
+    .prompt ul:last-child,
+    .prompt ol:last-child,
+    .prompt pre:last-child,
+    .prompt blockquote:last-child {
+      margin-bottom: 0;
+    }
+
+    .prompt ul,
+    .prompt ol {
+      padding-left: 1.5em;
     }
 
     .options-container {
@@ -73,12 +94,15 @@
     }
 
     .options-container.layout-list {
-      flex-direction: column;
-      align-items: stretch;
+      display: grid;
+      grid-template-columns: minmax(275px, 550px);
+      justify-content: center;
     }
 
     .options-container.layout-list .option-button {
       text-align: center;
+      width: 100%;
+      max-width: 550px;
     }
 
     .options-container .cancel-spacer {
@@ -123,6 +147,10 @@
     .option-button:focus {
       outline: 2px solid var(--vscode-focusBorder);
       outline-offset: 2px;
+    }
+
+    .input-section {
+      margin-top: 12px;
     }
 
     .textarea-container {
@@ -251,36 +279,7 @@
   </style>
 </head>
 <body>
-  <div id="form-container" class="form-container">
-    <h2 id="title" class="title hidden"></h2>
-    <p id="prompt" class="prompt">Loading...</p>
-    
-    <div id="options-container" class="options-container hidden"></div>
-    
-    <div id="input-section" class="hidden">
-      <div class="textarea-container">
-        <textarea 
-          id="input" 
-          placeholder="Type your response..."
-          aria-label="Your response"
-          rows="1"
-        ></textarea>
-      </div>
-      
-      <div class="button-container">
-        <button type="button" id="input-cancel-btn" class="btn btn-secondary hidden">Cancel</button>
-        <button type="button" id="submit-btn" class="btn btn-primary">Submit</button>
-      </div>
-    </div>
-    
-    <div id="selected-display" class="selected-option hidden"></div>
-    
-    <!-- Debug panel for development (hidden by default) -->
-    <div id="debug-panel" class="debug-panel hidden">
-      <strong>Debug Log:</strong>
-      <div id="debug-log"></div>
-    </div>
-  </div>
-  <script type="module" src="./input-form.ts"></script>
+  <div id="root"></div>
+  <script type="module" src="./main.tsx"></script>
 </body>
 </html>
