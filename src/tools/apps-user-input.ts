@@ -117,6 +117,8 @@ export interface UserAppsInputArgs {
   title?: string
   /** Optional array of quick-select button labels */
   options?: string[]
+  /** Whether to show the free text input box (defaults to true if no options, false if options provided) */
+  showInput?: boolean
 }
 
 /**
@@ -126,7 +128,7 @@ export interface UserAppsInputArgs {
 export const USER_APPS_INPUT_TOOL: ToolWithHandler = {
   name: 'user_apps_input',
   description:
-    'Display an interactive form to collect user input during generation. Supports optional quick-select buttons for common responses.',
+    'Display an interactive form to collect user input during generation. Supports optional quick-select buttons for common responses. An "Other..." button is always added when options are provided, allowing users to enter free text.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -143,7 +145,11 @@ export const USER_APPS_INPUT_TOOL: ToolWithHandler = {
         items: {
           type: 'string',
         },
-        description: 'Optional array of quick-select button labels for common responses',
+        description: 'Optional array of quick-select button labels for common responses. An "Other..." button is automatically added.',
+      },
+      showInput: {
+        type: 'boolean',
+        description: 'Whether to show the free text input box initially. Defaults to true if no options provided, false if options are provided. Users can always click "Other..." to show the input.',
       },
     },
     required: ['prompt'],
@@ -175,6 +181,10 @@ export const USER_APPS_INPUT_TOOL: ToolWithHandler = {
       }
     }
 
+    if (localArgs.showInput !== undefined && typeof localArgs.showInput !== 'boolean') {
+      throw new Error('Invalid argument: showInput must be a boolean')
+    }
+
     // Generate a unique request ID for this input request
     const requestId = randomUUID()
 
@@ -199,6 +209,7 @@ export const USER_APPS_INPUT_TOOL: ToolWithHandler = {
         prompt: localArgs.prompt,
         title: localArgs.title,
         options: localArgs.options,
+        showInput: localArgs.showInput,
         status: 'pending',
       },
     }

@@ -72,11 +72,30 @@
       margin-bottom: 12px;
     }
 
+    .options-container.layout-list {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .options-container.layout-list .option-button {
+      text-align: center;
+    }
+
+    .options-container .cancel-spacer {
+      flex-grow: 1;
+      min-width: 8px;
+    }
+
+    .options-container.layout-list .cancel-spacer {
+      flex-grow: 0;
+      min-height: 8px;
+    }
+
     .option-button {
       padding: 6px 12px;
       border: 1px solid var(--vscode-button-background);
       background: transparent;
-      color: var(--vscode-button-background);
+      color: var(--vscode-textLink-foreground);
       border-radius: 4px;
       cursor: pointer;
       font-size: inherit;
@@ -84,9 +103,21 @@
       transition: background-color 0.15s, color 0.15s;
     }
 
-    .option-button:hover {
+    .option-button:hover,
+    .option-button.active {
       background: var(--vscode-button-background);
       color: var(--vscode-button-foreground);
+    }
+
+    .option-button.cancel-btn {
+      border: 1px solid var(--vscode-button-border, transparent);
+      color: var(--vscode-button-secondaryForeground);
+      background: var(--vscode-button-secondaryBackground);
+      margin-left: auto;
+    }
+
+    .option-button.cancel-btn:hover {
+      background: var(--vscode-button-secondaryHoverBackground);
     }
 
     .option-button:focus {
@@ -101,7 +132,7 @@
 
     textarea {
       width: 100%;
-      min-height: 60px;
+      min-height: 32px;
       max-height: 200px;
       padding: 8px;
       border: 1px solid var(--vscode-input-border);
@@ -110,8 +141,9 @@
       color: var(--vscode-input-foreground);
       font-family: inherit;
       font-size: inherit;
-      resize: vertical;
+      resize: none;
       line-height: 1.4;
+      overflow-y: hidden;
     }
 
     textarea:focus {
@@ -168,6 +200,7 @@
       border-radius: 4px;
       font-style: italic;
       color: var(--vscode-descriptionForeground);
+      white-space: pre-wrap;
     }
 
     .hidden {
@@ -224,26 +257,26 @@
     
     <div id="options-container" class="options-container hidden"></div>
     
-    <div id="input-section">
+    <div id="input-section" class="hidden">
       <div class="textarea-container">
         <textarea 
           id="input" 
           placeholder="Type your response..."
           aria-label="Your response"
-          rows="3"
+          rows="1"
         ></textarea>
       </div>
       
       <div class="button-container">
-        <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="input-cancel-btn" class="btn btn-secondary hidden">Cancel</button>
         <button type="button" id="submit-btn" class="btn btn-primary">Submit</button>
       </div>
     </div>
     
     <div id="selected-display" class="selected-option hidden"></div>
     
-    <!-- Debug panel for development -->
-    <div id="debug-panel" class="debug-panel">
+    <!-- Debug panel for development (hidden by default) -->
+    <div id="debug-panel" class="debug-panel hidden">
       <strong>Debug Log:</strong>
       <div id="debug-log"></div>
     </div>

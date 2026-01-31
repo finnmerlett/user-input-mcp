@@ -18,7 +18,7 @@ const optionsContainer = document.getElementById('options-container')!
 const inputSection = document.getElementById('input-section')!
 const textareaEl = document.getElementById('input') as HTMLTextAreaElement
 const submitBtn = document.getElementById('submit-btn')!
-const cancelBtn = document.getElementById('cancel-btn')!
+const inputCancelBtn = document.getElementById('input-cancel-btn')!  // Cancel button in input section
 const selectedDisplay = document.getElementById('selected-display')!
 const debugLogEl = document.getElementById('debug-log')!
 
@@ -26,6 +26,9 @@ const debugLogEl = document.getElementById('debug-log')!
 let submitted = false
 let app: App | null = null
 let currentRequestId: string | null = null
+let inputSectionOpen = false
+let otherBtnRef: HTMLButtonElement | null = null
+let optionsCancelBtnRef: HTMLButtonElement | null = null  // Reference to cancel button in options
 
 // Debug logging
 function debug(message: string, type: 'info' | 'sent' | 'received' | 'error' = 'info') {
@@ -38,7 +41,7 @@ function debug(message: string, type: 'info' | 'sent' | 'received' | 'error' = '
 }
 
 // Render the form with the provided arguments
-function renderForm(prompt?: string, title?: string, options?: string[]) {
+function renderForm(prompt?: string, title?: string, options?: string[], showInput?: boolean) {
   // Show title if provided
   if (title) {
     titleEl.textContent = title
@@ -48,22 +51,112 @@ function renderForm(prompt?: string, title?: string, options?: string[]) {
   // Show prompt
   promptEl.textContent = prompt || 'Please provide your input:'
 
+  const hasOptions = options && Array.isArray(options) && options.length > 0
+
+  // Clear and set up options container
+  optionsContainer.innerHTML = ''
+  optionsContainer.classList.remove('layout-list', 'layout-row')
+  
+  // Determine layout: default row, but use list if:
+  // - Any button > 25 chars
+  // - > 4 choice buttons (not counting cancel)
+  // - Total chars > 50
+  let useListLayout = false
+  if (hasOptions) {
+    const allLabels = [...options!, 'Something else...']
+    const totalButtons = allLabels.length  // Don't count cancel
+    const maxLen = Math.max(...allLabels.map(l => l.length))
+    const totalChars = allLabels.reduce((sum, l) => sum + l.length, 0)
+    
+    if (maxLen > 25 || totalButtons > 4 || totalChars > 40) {
+      useListLayout = true
+    }
+  }
+
   // Show options as buttons if provided
-  if (options && Array.isArray(options) && options.length > 0) {
-    optionsContainer.innerHTML = ''
-    options.forEach(option => {
+  if (hasOptions) {
+    options!.forEach(option => {
       const btn = document.createElement('button')
       btn.type = 'button'
       btn.className = 'option-button'
       btn.textContent = option
-      btn.addEventListener('click', () => handleOptionClick(option))
+      btn.addEventListener('click', () => handleOptionClick(option, btn))
       optionsContainer.appendChild(btn)
     })
+    
+    // Add "Something else..." button that toggles the free text input
+    const otherBtn = document.createElement('button')
+    otherBtn.type = 'button'
+    otherBtn.className = 'option-button'
+    otherBtn.textContent = 'Something else...'
+    otherBtn.addEventListener('click', () => {
+      if (inputSectionOpen) {
+        // Close the input section
+        inputSection.classList.add('hidden')
+        otherBtn.classList.remove('active')
+        inputSectionOpen = false
+        // Show cancel in options, hide in input section
+        if (optionsCancelBtnRef) optionsCancelBtnRef.classList.remove('hidden')
+        inputCancelBtn.classList.add('hidden')
+      } else {
+        // Open the input section
+        inputSection.classList.remove('hidden')
+        otherBtn.classList.add('active')
+        inputSectionOpen = true
+        // Hide cancel in options, show in input section
+        if (optionsCancelBtnRef) optionsCancelBtnRef.classList.add('hidden')
+        inputCancelBtn.classList.remove('hidden')
+        textareaEl.focus()
+      }
+    })
+    otherBtnRef = otherBtn
+    optionsContainer.appendChild(otherBtn)
+    
+    // Add spacer to push cancel to the end
+    const spacer = document.createElement('div')
+    spacer.className = 'cancel-spacer'
+    optionsContainer.appendChild(spacer)
+    
+    // Add cancel button at the end
+    const cancelBtn = document.createElement('button')
+    cancelBtn.type = 'button'
+    cancelBtn.className = 'option-button cancel-btn'
+    cancelBtn.textContent = 'Cancel'
+    cancelBtn.addEventListener('click', handleCancel)
+    optionsContainer.appendChild(cancelBtn)
+    optionsCancelBtnRef = cancelBtn
+    
+    optionsContainer.classList.remove('hidden')
+    
+    // Apply layout
+    if (useListLayout) {
+      optionsContainer.classList.add('layout-list')
+    }
+  } else {
+    // No options - add just cancel button
+    const cancelBtn = document.createElement('button')
+    cancelBtn.type = 'button'
+    cancelBtn.className = 'option-button cancel-btn'
+    cancelBtn.textContent = 'Cancel'
+    cancelBtn.addEventListener('click', handleCancel)
+    optionsContainer.appendChild(cancelBtn)
+    optionsCancelBtnRef = cancelBtn
     optionsContainer.classList.remove('hidden')
   }
 
-  // Focus the textarea
-  textareaEl.focus()
+  // Show input section based on showInput parameter
+  // If showInput is true OR if there are no options, show the input
+  if (showInput || !hasOptions) {
+    inputSection.classList.remove('hidden')
+    inputSectionOpen = true
+    if (otherBtnRef) {
+      otherBtnRef.classList.add('active')
+    }
+    // Hide cancel in options, show in input section
+    if (optionsCancelBtnRef) optionsCancelBtnRef.classList.add('hidden')
+    inputCancelBtn.classList.remove('hidden')
+    textareaEl.focus()
+  }
 }
 
 // Show a status message
@@ -76,9 +169,13 @@ function showMessage(text: string) {
 }
 
 // Handle clicking an option button
-function handleOptionClick(option: string) {
+function handleOptionClick(option: string, btn: HTMLButtonElement) {
   if (submitted) return
-  submitResult(option, 'option')
+  // Highlight the selected button
+  btn.classList.add('active')
+  // Include any free text along with the option (only if input section is open)
+  const freeText = inputSectionOpen ? textareaEl.value.trim() : undefined
+  submitResult(option, 'option', freeText || undefined)
 }
 
 // Handle form submission
@@ -89,17 +186,17 @@ function handleSubmit() {
     textareaEl.focus()
     return
   }
-  submitResult(value, 'submit')
+  submitResult(value, 'submit', undefined)
 }
 
 // Handle cancellation
 function handleCancel() {
   if (submitted) return
-  submitResult(null, 'cancel')
+  submitResult(null, 'cancel', undefined)
 }
 
 // Submit the result back to the host
-async function submitResult(value: string | null, action: 'option' | 'submit' | 'cancel') {
+async function submitResult(value: string | null, action: 'option' | 'submit' | 'cancel', freeText?: string) {
   submitted = true
   
   // Disable the form
@@ -107,7 +204,10 @@ async function submitResult(value: string | null, action: 'option' | 'submit' | 
   
   // Show what was selected/entered
   if (action === 'option') {
-    selectedDisplay.textContent = `Selected: ${value}`
+    const displayText = freeText 
+      ? `Selected: ${value} (with text: ${freeText})`
+      : `Selected: ${value}`
+    selectedDisplay.textContent = displayText
     selectedDisplay.classList.remove('hidden')
     inputSection.classList.add('hidden')
   } else if (action === 'cancel') {
@@ -120,10 +220,15 @@ async function submitResult(value: string | null, action: 'option' | 'submit' | 
     inputSection.classList.add('hidden')
   }
 
-  // Build the message to send
-  const responseText = action === 'cancel' 
-    ? undefined
-    : value!
+  // Build the response - include both option and freeText if available
+  let responseText: string | undefined
+  if (action === 'cancel') {
+    responseText = undefined
+  } else if (action === 'option' && freeText) {
+    responseText = `${value}\n\nAdditional text: ${freeText}`
+  } else {
+    responseText = value!
+  }
   const cancelled = action === 'cancel'
 
   debug(`Storing response (requestId: ${currentRequestId}, cancelled: ${cancelled})`)
@@ -157,13 +262,22 @@ async function submitResult(value: string | null, action: 'option' | 'submit' | 
 
 // Auto-resize textarea as user types
 function autoResizeTextarea() {
-  textareaEl.style.height = 'auto'
-  textareaEl.style.height = Math.min(textareaEl.scrollHeight, 200) + 'px'
+  // Reset to single line to get accurate scrollHeight
+  textareaEl.style.height = '32px'
+  textareaEl.style.overflow = 'hidden'
+  
+  const scrollHeight = textareaEl.scrollHeight
+  if (scrollHeight > 32) {
+    textareaEl.style.height = Math.min(scrollHeight, 200) + 'px'
+  }
+  if (scrollHeight > 200) {
+    textareaEl.style.overflow = 'auto'
+  }
 }
 
 // Event listeners
 submitBtn.addEventListener('click', handleSubmit)
-cancelBtn.addEventListener('click', handleCancel)
+inputCancelBtn.addEventListener('click', handleCancel)
 textareaEl.addEventListener('input', autoResizeTextarea)
 textareaEl.addEventListener('keydown', (e) => {
   // Submit on Ctrl/Cmd + Enter
@@ -186,9 +300,9 @@ async function init() {
     // Handle tool input - this is where we receive the form arguments
     app.ontoolinput = (input) => {
       debug('Tool input received: ' + JSON.stringify(input.arguments || {}).substring(0, 80))
-      const args = input.arguments as { prompt?: string; title?: string; options?: string[] } | undefined
+      const args = input.arguments as { prompt?: string; title?: string; options?: string[]; showInput?: boolean } | undefined
       if (args) {
-        renderForm(args.prompt, args.title, args.options)
+        renderForm(args.prompt, args.title, args.options, args.showInput)
       }
     }
 
@@ -202,13 +316,14 @@ async function init() {
           prompt?: string
           title?: string
           options?: string[]
+          showInput?: boolean
         }
         if (sc.requestId) {
           currentRequestId = sc.requestId
           debug('Got requestId: ' + currentRequestId)
         }
         if (sc.prompt) {
-          renderForm(sc.prompt, sc.title, sc.options)
+          renderForm(sc.prompt, sc.title, sc.options, sc.showInput)
         }
       }
     }
