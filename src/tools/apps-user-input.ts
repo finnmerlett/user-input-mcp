@@ -1,7 +1,13 @@
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { ServerResult } from '@modelcontextprotocol/sdk/types.js'
 import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server'
 
 import { ToolWithHandler } from './types.js'
+
+// Get the directory of the current module
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
  * Resource URI for the user input form UI
@@ -9,42 +15,14 @@ import { ToolWithHandler } from './types.js'
 export const USER_INPUT_FORM_URI = 'ui://user-input/input-form'
 
 /**
- * Placeholder HTML for the user input form.
- * This will be replaced with the real UI implementation in Phase 3.
+ * Read the HTML form file from disk.
+ * The file is located relative to the built output directory.
  */
-const PLACEHOLDER_HTML = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Input Form</title>
-  <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      background: #f5f5f5;
-    }
-    .placeholder {
-      padding: 2rem;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      text-align: center;
-      color: #666;
-    }
-  </style>
-</head>
-<body>
-  <div class="placeholder">
-    <h2>Form Placeholder</h2>
-    <p>The user input form UI will be implemented in Phase 3.</p>
-  </div>
-</body>
-</html>`
+function readInputFormHtml(): string {
+  // In the build output, the HTML file is at ../ui/input-form.html relative to tools/
+  const htmlPath = join(__dirname, '..', 'ui', 'input-form.html')
+  return readFileSync(htmlPath, 'utf-8')
+}
 
 /**
  * Input schema for the user_apps_input tool
@@ -146,7 +124,7 @@ export const USER_INPUT_FORM_RESOURCE = {
       {
         uri: USER_INPUT_FORM_URI,
         mimeType: RESOURCE_MIME_TYPE,
-        text: PLACEHOLDER_HTML,
+        text: readInputFormHtml(),
       },
     ],
   }),

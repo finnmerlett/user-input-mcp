@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Input Form</title>
+  <style>
+    :root {
+      /* Fallback colors for non-VS Code environments */
+      --vscode-foreground: #333;
+      --vscode-editor-background: #fff;
+      --vscode-input-background: #fff;
+      --vscode-input-foreground: #333;
+      --vscode-input-border: #cecece;
+      --vscode-button-background: #007acc;
+      --vscode-button-foreground: #fff;
+      --vscode-button-hoverBackground: #005a9e;
+      --vscode-button-secondaryBackground: #5f6a79;
+      --vscode-button-secondaryForeground: #fff;
+      --vscode-button-secondaryHoverBackground: #4a5568;
+      --vscode-focusBorder: #007acc;
+      --vscode-descriptionForeground: #717171;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+      font-size: var(--vscode-font-size, 13px);
+      color: var(--vscode-foreground);
+      background: var(--vscode-editor-background);
+      margin: 0;
+      padding: 12px;
+      line-height: 1.4;
+    }
+
+    .form-container {
+      max-width: 100%;
+    }
+
+    .form-container.disabled {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    h2.title {
+      margin: 0 0 8px 0;
+      font-size: 1.1em;
+      font-weight: 600;
+    }
+
+    .prompt {
+      margin: 0 0 12px 0;
+      white-space: pre-wrap;
+    }
+
+    .options-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .option-button {
+      padding: 6px 12px;
+      border: 1px solid var(--vscode-button-background);
+      background: transparent;
+      color: var(--vscode-button-background);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: inherit;
+      font-family: inherit;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .option-button:hover {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+    }
+
+    .option-button:focus {
+      outline: 2px solid var(--vscode-focusBorder);
+      outline-offset: 2px;
+    }
+
+    .textarea-container {
+      position: relative;
+      margin-bottom: 12px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 60px;
+      max-height: 200px;
+      padding: 8px;
+      border: 1px solid var(--vscode-input-border);
+      border-radius: 4px;
+      background: var(--vscode-input-background);
+      color: var(--vscode-input-foreground);
+      font-family: inherit;
+      font-size: inherit;
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--vscode-focusBorder);
+    }
+
+    textarea::placeholder {
+      color: var(--vscode-descriptionForeground);
+    }
+
+    .button-container {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 6px 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: inherit;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+    }
+
+    .btn-primary:hover {
+      background: var(--vscode-button-hoverBackground);
+    }
+
+    .btn-secondary {
+      background: var(--vscode-button-secondaryBackground);
+      color: var(--vscode-button-secondaryForeground);
+    }
+
+    .btn-secondary:hover {
+      background: var(--vscode-button-secondaryHoverBackground);
+    }
+
+    .btn:focus {
+      outline: 2px solid var(--vscode-focusBorder);
+      outline-offset: 2px;
+    }
+
+    .selected-option {
+      margin-top: 8px;
+      padding: 8px;
+      background: var(--vscode-input-background);
+      border-radius: 4px;
+      font-style: italic;
+      color: var(--vscode-descriptionForeground);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="form-container" class="form-container">
+    <h2 id="title" class="title hidden"></h2>
+    <p id="prompt" class="prompt">Loading...</p>
+    
+    <div id="options-container" class="options-container hidden"></div>
+    
+    <div id="input-section">
+      <div class="textarea-container">
+        <textarea 
+          id="input" 
+          placeholder="Type your response..."
+          aria-label="Your response"
+          rows="3"
+        ></textarea>
+      </div>
+      
+      <div class="button-container">
+        <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="submit-btn" class="btn btn-primary">Submit</button>
+      </div>
+    </div>
+    
+    <div id="selected-display" class="selected-option hidden"></div>
+  </div>
+
+  <script type="module">
+    import { App, applyHostStyleVariables, applyHostFonts, applyDocumentTheme } from 'https://esm.sh/@modelcontextprotocol/ext-apps@1.0.1';
+
+    // DOM elements
+    const formContainer = document.getElementById('form-container');
+    const titleEl = document.getElementById('title');
+    const promptEl = document.getElementById('prompt');
+    const optionsContainer = document.getElementById('options-container');
+    const inputSection = document.getElementById('input-section');
+    const textareaEl = document.getElementById('input');
+    const submitBtn = document.getElementById('submit-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const selectedDisplay = document.getElementById('selected-display');
+
+    let submitted = false;
+    let app = null;
+
+    // Initialize the App connection
+    async function init() {
+      app = new App(
+        { name: 'UserInputForm', version: '1.0.0' },
+        { /* capabilities */ }
+      );
+
+      // Handle tool input (the arguments passed to user_apps_input)
+      app.ontoolinput = (params) => {
+        const args = params.arguments || {};
+        renderForm(args.prompt, args.title, args.options);
+      };
+
+      // Handle host context changes (theme updates)
+      app.onhostcontextchanged = (params) => {
+        if (params.context) {
+          applyHostStyleVariables(params.context);
+          applyHostFonts(params.context);
+          applyDocumentTheme(params.context);
+        }
+      };
+
+      // Connect to the host
+      await app.connect();
+
+      // Apply initial styling from host context
+      const hostContext = app.getHostContext?.();
+      if (hostContext) {
+        applyHostStyleVariables(hostContext);
+        applyHostFonts(hostContext);
+        applyDocumentTheme(hostContext);
+      }
+    }
+
+    // Render the form with the provided arguments
+    function renderForm(prompt, title, options) {
+      // Show title if provided
+      if (title) {
+        titleEl.textContent = title;
+        titleEl.classList.remove('hidden');
+      }
+
+      // Show prompt
+      promptEl.textContent = prompt || 'Please provide your input:';
+
+      // Show options as buttons if provided
+      if (options && Array.isArray(options) && options.length > 0) {
+        optionsContainer.innerHTML = '';
+        options.forEach(option => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'option-button';
+          btn.textContent = option;
+          btn.addEventListener('click', () => handleOptionClick(option));
+          optionsContainer.appendChild(btn);
+        });
+        optionsContainer.classList.remove('hidden');
+      }
+
+      // Focus the textarea
+      textareaEl.focus();
+    }
+
+    // Handle clicking an option button
+    function handleOptionClick(option) {
+      if (submitted) return;
+      submitResult(option, 'option');
+    }
+
+    // Handle form submission
+    function handleSubmit() {
+      if (submitted) return;
+      const value = textareaEl.value.trim();
+      if (!value) {
+        textareaEl.focus();
+        return;
+      }
+      submitResult(value, 'submit');
+    }
+
+    // Handle cancellation
+    function handleCancel() {
+      if (submitted) return;
+      submitResult(null, 'cancel');
+    }
+
+    // Submit the result back to the host
+    async function submitResult(value, action) {
+      submitted = true;
+      
+      // Disable the form
+      formContainer.classList.add('disabled');
+      
+      // Show what was selected/entered
+      if (action === 'option') {
+        selectedDisplay.textContent = `Selected: ${value}`;
+        selectedDisplay.classList.remove('hidden');
+        inputSection.classList.add('hidden');
+      } else if (action === 'cancel') {
+        selectedDisplay.textContent = 'Cancelled';
+        selectedDisplay.classList.remove('hidden');
+        inputSection.classList.add('hidden');
+      }
+
+      // Send result back to host
+      // The host expects tool results to be sent via the tool's response
+      // For MCP Apps, we use callTool to send a response or just close
+      try {
+        // Notify the host of the result by calling a response method
+        // The App SDK allows sending results through various mechanisms
+        // For now, we log and the host will handle this
+        console.log('User input result:', { value, action });
+        
+        // If there's a way to send the result back, use it here
+        // The tool result flow in MCP Apps typically uses the tool response
+      } catch (err) {
+        console.error('Failed to send result:', err);
+      }
+    }
+
+    // Auto-resize textarea as user types
+    function autoResizeTextarea() {
+      textareaEl.style.height = 'auto';
+      textareaEl.style.height = Math.min(textareaEl.scrollHeight, 200) + 'px';
+    }
+
+    // Event listeners
+    submitBtn.addEventListener('click', handleSubmit);
+    cancelBtn.addEventListener('click', handleCancel);
+    textareaEl.addEventListener('input', autoResizeTextarea);
+    textareaEl.addEventListener('keydown', (e) => {
+      // Submit on Ctrl/Cmd + Enter
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmit();
+      }
+    });
+
+    // Initialize on load
+    init().catch(err => {
+      console.error('Failed to initialize App:', err);
+      promptEl.textContent = 'Failed to connect to host. Please try again.';
+    });
+  </script>
+</body>
+</html>

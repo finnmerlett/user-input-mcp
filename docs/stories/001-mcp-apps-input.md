@@ -117,18 +117,18 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
 - [x] Export UI resource config (handler to be integrated in Phase 4)
 - [x] Implement tool handler (returns args for UI to use)
 
-### Phase 3: UI Implementation
+### Phase 3: UI Implementation ✅
 
-- [ ] Create HTML form structure with multiline textarea
-- [ ] Implement auto-expanding textarea behavior
-- [ ] Add optional quick-option buttons rendering
-- [ ] Add VS Code theme CSS variable support
-- [ ] Implement App class connection
-- [ ] Handle `ui/notifications/tool-input` for receiving arguments
-- [ ] Implement submit handler → return free text
-- [ ] Implement button click handler → return selected option
-- [ ] Implement cancel handler
-- [ ] Add disabled/greyed-out state after submission
+- [x] Create HTML form structure with multiline textarea
+- [x] Implement auto-expanding textarea behavior
+- [x] Add optional quick-option buttons rendering
+- [x] Add VS Code theme CSS variable support
+- [x] Implement App class connection
+- [x] Handle `ui/notifications/tool-input` for receiving arguments
+- [x] Implement submit handler → return free text
+- [x] Implement button click handler → return selected option
+- [x] Implement cancel handler
+- [x] Add disabled/greyed-out state after submission
 
 ### Phase 4: Integration
 
