@@ -132,21 +132,22 @@ async function submitResult(value: string | null, action: 'option' | 'submit' | 
   }
 
   try {
-    // Use sendMessage to send user response - this triggers a follow-up turn
-    await app.sendMessage({
-      role: 'user',
-      content: [{ type: 'text', text: messageText }]
+    // Use updateModelContext to add user response to the conversation context
+    // This updates the context for the next model turn
+    await app.updateModelContext({
+      content: [{ type: 'text', text: `User response: ${messageText}` }]
     })
-    debug('User message sent successfully')
+    debug('Model context updated with user response')
   } catch (err) {
-    debug('Failed to send message: ' + (err as Error).message, 'error')
+    debug('Failed to update model context: ' + (err as Error).message, 'error')
     
-    // Fallback: try updateModelContext
+    // Fallback: try sendMessage (may paste into chat input)
     try {
-      await app.updateModelContext({
-        content: [{ type: 'text', text: `User response: ${messageText}` }]
+      await app.sendMessage({
+        role: 'user',
+        content: [{ type: 'text', text: messageText }]
       })
-      debug('Fallback: model context updated')
+      debug('Fallback: Message sent via sendMessage')
     } catch (err2) {
       debug('Fallback also failed: ' + (err2 as Error).message, 'error')
     }
