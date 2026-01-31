@@ -4,7 +4,8 @@ A Model Context Protocol (MCP) server that provides tools for requesting input f
 
 ## Features
 
-- **Two input methods**: GUI-based Electron dialogs and MCP elicitation API
+- **Three input methods**: MCP Apps inline UI, GUI-based Electron dialogs, and MCP elicitation API
+- **MCP Apps integration**: Displays interactive HTML forms inline within chat interfaces (VS Code Insiders, Claude Desktop)
 - Built with TypeScript and the official MCP SDK
 - 120-minute timeout for GUI input, 10-minute timeout for elicitation
 - Easy integration with any MCP client (Claude Desktop, VS Code, etc.)
@@ -62,7 +63,36 @@ Or if installed globally:
 
 ### Tool Usage
 
-The server provides two tools for requesting user input:
+The server provides three tools for requesting user input:
+
+---
+
+#### `user_apps_input` ⭐ Recommended
+
+Displays an interactive HTML form inline within the chat interface using the MCP Apps protocol. Best for modern MCP clients that support MCP Apps (VS Code Insiders, Claude Desktop with MCP Apps support).
+
+- **Parameters**:
+  - `prompt` (required): The question or prompt to display to the user
+  - `title` (optional): A title for the input form
+  - `options` (optional): Array of quick-select button labels for common responses
+- **Features**:
+  - Inline rendering within the chat UI (no external windows)
+  - VS Code theme integration (light/dark mode)
+  - Auto-expanding multiline textarea
+  - Quick-select option buttons
+  - Ctrl/Cmd+Enter to submit
+
+**Example**:
+```json
+{
+  "name": "user_apps_input",
+  "arguments": {
+    "prompt": "How would you like to proceed?",
+    "title": "Next Steps",
+    "options": ["Continue", "Skip", "Cancel"]
+  }
+}
+```
 
 ---
 
@@ -116,13 +146,15 @@ Uses the MCP elicitation API to request input directly through the client's nati
 
 ### Choosing Between Tools
 
-| Feature | `user_input` | `user_elicitation` |
-|---------|--------------|-------------------|
-| Interface | Electron GUI dialog | Client's native UI |
-| Custom title | ✅ Yes | ❌ No |
-| Client support required | None | Elicitation capability |
-| Timeout | 120 minutes | 10 minutes |
-| Best for | Standalone servers, Claude Desktop | VS Code, modern MCP clients |
+| Feature | `user_apps_input` | `user_input` | `user_elicitation` |
+|---------|------------------|--------------|-------------------|
+| Interface | Inline HTML in chat | Electron GUI dialog | Client's native UI |
+| Theme support | ✅ VS Code themes | ❌ No | ⚠️ Partial |
+| Quick options | ✅ Yes | ❌ No | ❌ No |
+| Custom title | ✅ Yes | ✅ Yes | ❌ No |
+| Multiline input | ✅ Auto-expand | ❌ No | ❌ No |
+| Client support | MCP Apps capable | None | Elicitation capability |
+| Best for | VS Code Insiders, modern clients | Standalone, Claude Desktop | Basic MCP clients |
 
 ## Development
 
@@ -178,8 +210,11 @@ src/
 ├── tools/
 │   ├── index.ts          # Tool exports and registry
 │   ├── types.ts          # TypeScript types
+│   ├── apps-user-input.ts    # MCP Apps inline form tool
 │   ├── electron-user-input.ts  # Electron GUI dialog tool
 │   └── elicitation.ts    # MCP elicitation API tool
+├── ui/
+│   └── input-form.html   # MCP Apps inline form HTML
 └── utils/
     └── instructions.ts   # Instructions loader utility
 docs/
