@@ -6,6 +6,12 @@ import type { ServerResult } from '@modelcontextprotocol/sdk/types.js'
 import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server'
 
 import { ToolWithHandler } from './types.js'
+import { 
+  UserAppsInputSchema,
+  AwaitAppsResponseSchema,
+  InternalAppsSubmitSchema,
+  toJsonSchema
+} from './schemas.js'
 
 // Get the directory of the current module
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -109,6 +115,7 @@ function readInputFormHtml(): string {
 
 /**
  * Input schema for the user_apps_input tool
+ * (kept for backwards compatibility, but now uses Zod schema)
  */
 export interface UserAppsInputArgs {
   /** The question or prompt to show to the user */
@@ -129,31 +136,7 @@ export const USER_APPS_INPUT_TOOL: ToolWithHandler = {
   name: 'user_apps_input',
   description:
     'Display an interactive form to collect user input during generation. Supports optional quick-select buttons for common responses. An "Other..." button is always added when options are provided, allowing users to enter free text.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      prompt: {
-        type: 'string',
-        description: 'The question or prompt to display to the user',
-      },
-      title: {
-        type: 'string',
-        description: 'Optional title for the input form',
-      },
-      options: {
-        type: 'array',
-        items: {
-          type: 'string',
-        },
-        description: 'Optional array of quick-select button labels for common responses. An "Other..." button is automatically added.',
-      },
-      showInput: {
-        type: 'boolean',
-        description: 'Whether to show the free text input box initially. Defaults to true if no options provided, false if options are provided. Users can always click "Other..." to show the input.',
-      },
-    },
-    required: ['prompt'],
-  },
+  inputSchema: toJsonSchema(UserAppsInputSchema),
   // UI metadata for MCP Apps integration
   _meta: {
     ui: {
@@ -161,29 +144,8 @@ export const USER_APPS_INPUT_TOOL: ToolWithHandler = {
     },
   },
   handler: async (args, _extra): Promise<ServerResult> => {
-    const localArgs = args as UserAppsInputArgs
-
-    if (!localArgs.prompt || typeof localArgs.prompt !== 'string') {
-      throw new Error('Missing required argument: prompt')
-    }
-
-    // Validate optional fields
-    if (localArgs.title !== undefined && typeof localArgs.title !== 'string') {
-      throw new Error('Invalid argument: title must be a string')
-    }
-
-    if (localArgs.options !== undefined) {
-      if (!Array.isArray(localArgs.options)) {
-        throw new Error('Invalid argument: options must be an array')
-      }
-      if (!localArgs.options.every((opt) => typeof opt === 'string')) {
-        throw new Error('Invalid argument: all options must be strings')
-      }
-    }
-
-    if (localArgs.showInput !== undefined && typeof localArgs.showInput !== 'boolean') {
-      throw new Error('Invalid argument: showInput must be a boolean')
-    }
+    // Validate input with Zod
+    const validatedArgs = UserAppsInputSchema.parse(args)
 
     // Generate a unique request ID for this input request
     const requestId = randomUUID()
@@ -206,10 +168,10 @@ export const USER_APPS_INPUT_TOOL: ToolWithHandler = {
       ],
       structuredContent: {
         requestId,
-        prompt: localArgs.prompt,
-        title: localArgs.title,
-        options: localArgs.options,
-        showInput: localArgs.showInput,
+        prompt: validatedArgs.prompt,
+        title: validatedArgs.title,
+        options: validatedArgs.options,
+        showInput: validatedArgs.showInput,
         status: 'pending',
       },
     }
@@ -225,36 +187,12 @@ export const _APPS_SUBMIT_TOOL: ToolWithHandler = {
   name: '__internal__apps_submit',
   description:
     'Internal tool for MCP Apps UI to store user responses. Do not call directly.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      requestId: {
-        type: 'string',
-        description: 'The unique request ID from the user_apps_input call',
-      },
-      response: {
-        type: 'string',
-        description: "The user's response text",
-      },
-      cancelled: {
-        type: 'boolean',
-        description: 'Whether the user cancelled the input request',
-      },
-    },
-    required: ['requestId'],
-  },
+  inputSchema: toJsonSchema(InternalAppsSubmitSchema),
   handler: async (args, _extra): Promise<ServerResult> => {
-    const { requestId, response, cancelled } = args as {
-      requestId: string
-      response?: string
-      cancelled?: boolean
-    }
+    // Validate input with Zod
+    const validatedArgs = InternalAppsSubmitSchema.parse(args)
 
-    if (!requestId || typeof requestId !== 'string') {
-      throw new Error('Missing required argument: requestId')
-    }
-
-    storeResponse(requestId, response, cancelled ?? false)
+    storeResponse(validatedArgs.requestId, validatedArgs.response, validatedArgs.cancelled ?? false)
 
     return {
       content: [
@@ -275,35 +213,16 @@ export const AWAIT_APPS_RESPONSE_TOOL: ToolWithHandler = {
   name: 'await_apps_response',
   description:
     'Wait for and retrieve the user response from a user_apps_input call. Call this after user_apps_input to get the actual user input. This will block until the user submits their response.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      requestId: {
-        type: 'string',
-        description: 'The requestId returned by user_apps_input',
-      },
-      timeout: {
-        type: 'number',
-        description: 'Optional timeout in milliseconds (default: 10 minutes)',
-      },
-    },
-    required: ['requestId'],
-  },
+  inputSchema: toJsonSchema(AwaitAppsResponseSchema),
   handler: async (args, _extra): Promise<ServerResult> => {
-    const { requestId, timeout } = args as {
-      requestId: string
-      timeout?: number
-    }
-
-    if (!requestId || typeof requestId !== 'string') {
-      throw new Error('Missing required argument: requestId')
-    }
+    // Validate input with Zod
+    const validatedArgs = AwaitAppsResponseSchema.parse(args)
 
     try {
-      const result = await waitForResponse(requestId, timeout ?? DEFAULT_TIMEOUT_MS)
+      const result = await waitForResponse(validatedArgs.requestId, validatedArgs.timeout ?? DEFAULT_TIMEOUT_MS)
       
       // Clean up the pending request
-      pendingRequests.delete(requestId)
+      pendingRequests.delete(validatedArgs.requestId)
 
       if (result.cancelled) {
         return {
@@ -314,7 +233,7 @@ export const AWAIT_APPS_RESPONSE_TOOL: ToolWithHandler = {
             },
           ],
           structuredContent: {
-            requestId,
+            requestId: validatedArgs.requestId,
             cancelled: true,
             response: null,
           },
@@ -329,14 +248,14 @@ export const AWAIT_APPS_RESPONSE_TOOL: ToolWithHandler = {
           },
         ],
         structuredContent: {
-          requestId,
+          requestId: validatedArgs.requestId,
           cancelled: false,
           response: result.response,
         },
       }
     } catch (error) {
       // Clean up on error
-      pendingRequests.delete(requestId)
+      pendingRequests.delete(validatedArgs.requestId)
       
       return {
         content: [
