@@ -32,7 +32,8 @@
     "electron": "^33.4.11",
     "marked": "^17.0.1",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/dompurify": "^3.2.0",
