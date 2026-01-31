@@ -15,6 +15,12 @@ Uses the MCP elicitation API for native client-side input. Preferred when the cl
 - **Parameters**: `prompt` (required)
 - **Timeout**: 10 minutes
 
+### `user_apps_input`
+Uses the MCP Apps protocol to display a rich UI for user input in clients that support it.
+- **Parameters**: `prompt` (required), `options` (optional array of choices), `title` (optional)
+- **Timeout**: 120 minutes
+- **Note**: A "Something else..." button that triggers free text input is always added automatically. Do NOT include your own "Something else" or similar variant in the options array.
+
 ## Constraints & Limitations
 
 - Elicitation requests (`user_elicitation`) require client elicitation capability
