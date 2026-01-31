@@ -83,3 +83,17 @@ Context, motivation, and any relevant history. Why is this feature needed?
 
 - [Link to relevant docs](url)
 - [Related issues or PRs](url)
+
+---
+
+## Devlog
+
+*Document additional work, changes, and discoveries made during implementation that weren't part of the original plan. Update this section as you go.*
+
+### Extras added beyond original spec
+
+<!-- Example format:
+#### Feature/Change Name (commit-hash)
+- **What was added/changed** - Brief description
+- Any relevant implementation details
+-->

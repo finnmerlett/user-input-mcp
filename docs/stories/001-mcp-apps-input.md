@@ -6,7 +6,7 @@ Add a new user input tool that leverages the **MCP Apps protocol** to render an 
 
 ## Status
 
-🟡 **In Progress**
+✅ **Complete**
 
 ## Background
 
@@ -134,15 +134,15 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
 
 - [x] Export tool in `src/tools/index.ts`
 - [x] Add tool name constant
-- [ ] Manual test with VS Code Insiders
-- [ ] Verify theme integration (light/dark)
+- [x] Manual test with VS Code Insiders
+- [x] Verify theme integration (light/dark)
 
 ### Phase 5: Documentation & Polish
 
 - [x] Update README with new tool documentation
 - [x] Add usage examples
-- [ ] Error handling improvements
-- [ ] Timeout handling
+- [x] Error handling improvements
+- [x] Timeout handling
 
 ## Testing Plan
 
@@ -169,3 +169,44 @@ Manual testing with VS Code Insiders:
 - [SEP-1865 Specification](https://github.com/modelcontextprotocol/ext-apps/blob/main/specification/draft/apps.mdx)
 - [ext-apps SDK](https://github.com/modelcontextprotocol/ext-apps)
 - [VS Code MCP Docs](https://code.visualstudio.com/docs/copilot/chat/mcp-servers)
+
+---
+
+## Devlog
+
+### Extras added beyond original spec
+
+This section documents additional work and changes made during implementation that weren't part of the original plan.
+
+#### Build System Migration (22f7204)
+- **Migrated from tsc to Vite build** - More robust bundling with better support for the MCP Apps SDK
+- Enables proper handling of HTML/TypeScript UI assets
+
+#### Two-Tool Blocking Pattern (68edf65)
+- **Implemented new architecture using two tools instead of one**:
+  - `user_apps_input` - Renders the UI and returns immediately
+  - `await_apps_response` - Blocks waiting for user submission
+  - `__internal__apps_submit` - Internal tool for UI to submit results (hidden from agent)
+- This pattern was required because the MCP Apps protocol doesn't support direct tool result return from UI
+
+#### UI Implementation in React (c7ab5c3)
+- **Rewrote the input form in React** instead of plain HTML/JS
+- Better component structure and state management
+- Various UX improvements during the rewrite
+
+#### Enhanced Button Styling (9a462e0)
+- **Toggle input feature** - Option buttons can now show/hide the text input
+- Improved button styling for better visual feedback
+
+#### Inline MCP Apps Protocol (d2f2c38)
+- Implemented the protocol inline without external imports for reliability
+- Added `ui/update-model-context` support
+
+#### Auto "Something else" Option (df81578)
+- When options are provided, automatically adds a "Something else" option
+- Allows users to provide free-text input even when presented with predefined options
+- Documented in README
+
+#### Internal Tool Naming (0f97d6b)
+- Renamed `_apps_store_response` to `__internal__apps_submit` for clearer intent
+- Prefixed with `__internal__` to indicate it's not meant for agent use
