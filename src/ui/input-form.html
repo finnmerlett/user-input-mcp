@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <title>User Input Form</title>
   <style>
     :root {
@@ -164,6 +165,41 @@
     .hidden {
       display: none !important;
     }
+
+    .debug-panel {
+      margin-top: 16px;
+      padding: 8px;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: monospace;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .debug-panel.dark {
+      background: #1e1e1e;
+      border-color: #444;
+      color: #ccc;
+    }
+
+    .debug-entry {
+      margin: 4px 0;
+      word-break: break-all;
+    }
+
+    .debug-entry.sent {
+      color: #0066cc;
+    }
+
+    .debug-entry.received {
+      color: #008800;
+    }
+
+    .debug-entry.error {
+      color: #cc0000;
+    }
   </style>
 </head>
 <body>
@@ -190,193 +226,13 @@
     </div>
     
     <div id="selected-display" class="selected-option hidden"></div>
+    
+    <!-- Debug panel for development -->
+    <div id="debug-panel" class="debug-panel">
+      <strong>Debug Log:</strong>
+      <div id="debug-log"></div>
+    </div>
   </div>
-
-  <script type="module">
-    // Inline implementation of MCP Apps protocol (no external imports for CSP compatibility)
-
-    // DOM elements
-    const formContainer = document.getElementById('form-container');
-    const titleEl = document.getElementById('title');
-    const promptEl = document.getElementById('prompt');
-    const optionsContainer = document.getElementById('options-container');
-    const inputSection = document.getElementById('input-section');
-    const textareaEl = document.getElementById('input');
-    const submitBtn = document.getElementById('submit-btn');
-    const cancelBtn = document.getElementById('cancel-btn');
-    const selectedDisplay = document.getElementById('selected-display');
-
-    let submitted = false;
-    let requestIdCounter = 1;
-
-    // Send JSON-RPC request to host
-    function sendRequest(method, params) {
-      const id = requestIdCounter++;
-      window.parent.postMessage({ jsonrpc: '2.0', id, method, params }, '*');
-      return id;
-    }
-
-    // Send JSON-RPC notification to host
-    function sendNotification(method, params) {
-      window.parent.postMessage({ jsonrpc: '2.0', method, params }, '*');
-    }
-
-    // Handle messages from host
-    window.addEventListener('message', (event) => {
-      const data = event.data;
-      if (!data || !data.jsonrpc) return;
-
-      console.log('Received message from host:', data);
-
-      // Handle tool input notification
-      if (data.method === 'ui/notifications/tool-input') {
-        const args = data.params?.arguments || {};
-        console.log('Received tool input:', args);
-        renderForm(args.prompt, args.title, args.options);
-      }
-
-      // Handle tool result notification
-      if (data.method === 'ui/notifications/tool-result') {
-        const content = data.params?.content?.find(c => c.type === 'text');
-        if (content?.text) {
-          try {
-            const parsed = JSON.parse(content.text);
-            console.log('Received tool result:', parsed);
-            renderForm(parsed.prompt, parsed.title, parsed.options);
-          } catch (e) {
-            console.log('Tool result text (unparsed):', content.text);
-          }
-        }
-      }
-    });
-
-    // Initialize the App connection
-    async function init() {
-      console.log('Initializing MCP Apps connection...');
-      
-      // Send ui/initialize request
-      sendRequest('ui/initialize', {
-        protocolVersion: '2025-06-18',
-        appCapabilities: {},
-        clientInfo: { name: 'UserInputForm', version: '1.0.0' }
-      });
-
-      // Send initialized notification
-      sendNotification('ui/notifications/initialized', {});
-      
-      console.log('MCP Apps initialized, waiting for tool input...');
-    }
-
-    // Render the form with the provided arguments
-    function renderForm(prompt, title, options) {
-      // Show title if provided
-      if (title) {
-        titleEl.textContent = title;
-        titleEl.classList.remove('hidden');
-      }
-
-      // Show prompt
-      promptEl.textContent = prompt || 'Please provide your input:';
-
-      // Show options as buttons if provided
-      if (options && Array.isArray(options) && options.length > 0) {
-        optionsContainer.innerHTML = '';
-        options.forEach(option => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'option-button';
-          btn.textContent = option;
-          btn.addEventListener('click', () => handleOptionClick(option));
-          optionsContainer.appendChild(btn);
-        });
-        optionsContainer.classList.remove('hidden');
-      }
-
-      // Focus the textarea
-      textareaEl.focus();
-    }
-
-    // Handle clicking an option button
-    function handleOptionClick(option) {
-      if (submitted) return;
-      submitResult(option, 'option');
-    }
-
-    // Handle form submission
-    function handleSubmit() {
-      if (submitted) return;
-      const value = textareaEl.value.trim();
-      if (!value) {
-        textareaEl.focus();
-        return;
-      }
-      submitResult(value, 'submit');
-    }
-
-    // Handle cancellation
-    function handleCancel() {
-      if (submitted) return;
-      submitResult(null, 'cancel');
-    }
-
-    // Submit the result back to the host
-    async function submitResult(value, action) {
-      submitted = true;
-      
-      // Disable the form
-      formContainer.classList.add('disabled');
-      
-      // Show what was selected/entered
-      if (action === 'option') {
-        selectedDisplay.textContent = `Selected: ${value}`;
-        selectedDisplay.classList.remove('hidden');
-        inputSection.classList.add('hidden');
-      } else if (action === 'cancel') {
-        selectedDisplay.textContent = 'Cancelled';
-        selectedDisplay.classList.remove('hidden');
-        inputSection.classList.add('hidden');
-      } else if (action === 'submit') {
-        selectedDisplay.textContent = `Submitted: ${value}`;
-        selectedDisplay.classList.remove('hidden');
-        inputSection.classList.add('hidden');
-      }
-
-      // Send result back to host via ui/update-model-context
-      // This updates the context the model sees in the next turn
-      const resultText = action === 'cancel' 
-        ? '❌ User cancelled the input request.'
-        : `✅ User response: ${value}`;
-
-      console.log('Sending result to host:', resultText);
-      
-      sendRequest('ui/update-model-context', {
-        content: [{ type: 'text', text: resultText }]
-      });
-    }
-
-    // Auto-resize textarea as user types
-    function autoResizeTextarea() {
-      textareaEl.style.height = 'auto';
-      textareaEl.style.height = Math.min(textareaEl.scrollHeight, 200) + 'px';
-    }
-
-    // Event listeners
-    submitBtn.addEventListener('click', handleSubmit);
-    cancelBtn.addEventListener('click', handleCancel);
-    textareaEl.addEventListener('input', autoResizeTextarea);
-    textareaEl.addEventListener('keydown', (e) => {
-      // Submit on Ctrl/Cmd + Enter
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        handleSubmit();
-      }
-    });
-
-    // Initialize on load
-    init().catch(err => {
-      console.error('Failed to initialize App:', err);
-      promptEl.textContent = 'Failed to connect to host. Please try again.';
-    });
-  </script>
+  <script type="module" src="./input-form.ts"></script>
 </body>
 </html>
