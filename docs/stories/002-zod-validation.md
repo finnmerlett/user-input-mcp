@@ -79,12 +79,10 @@ Zod v4 provides:
 
 ### Files to Create/Modify
 
-- [x] `package.json` - Add zod and zod-to-json-schema dependencies
-- [x] `src/tools/schemas.ts` - Define Zod schemas for all tools
-- [x] `src/tools/electron-user-input.ts` - Integrate Zod validation
-- [x] `src/tools/elicitation.ts` - Integrate Zod validation
-- [x] `src/tools/apps-user-input.ts` - Integrate Zod validation
-- [x] `src/tools/types.ts` - Update types to use Zod inference (not needed - types maintained for backwards compatibility)
+- [x] `package.json` - Add zod dependency
+- [x] `src/tools/electron-user-input.ts` - Integrate Zod validation with co-located schema
+- [x] `src/tools/elicitation.ts` - Integrate Zod validation with co-located schema
+- [x] `src/tools/apps-user-input.ts` - Integrate Zod validation with co-located schemas
 - [x] `tsconfig.json` - Verify Zod compatibility settings (no changes needed)
 
 ## Implementation Tasks
@@ -98,13 +96,11 @@ Zod v4 provides:
 
 ### Phase 2: Schema Definitions
 
-- [x] Create `src/tools/schemas.ts`
-- [x] Define Zod schema for `user_input` tool
-- [x] Define Zod schema for `user_elicitation` tool
-- [x] Define Zod schema for `user_apps_input` tool
-- [x] Define Zod schema for `await_apps_response` tool
-- [x] Define Zod schema for `__internal__apps_submit` tool
-- [x] Export inferred types from schemas
+- [x] Co-locate Zod schemas with tool implementations (instead of centralized file)
+- [x] Define Zod schema for `user_input` tool in `electron-user-input.ts`
+- [x] Define Zod schema for `user_elicitation` tool in `elicitation.ts`
+- [x] Define Zod schemas for `user_apps_input`, `await_apps_response`, and `__internal__apps_submit` tools in `apps-user-input.ts`
+- [x] Use `z.infer<>` for type inference (no duplicate interfaces)
 - [x] Add descriptions to all schema fields
 
 ### Phase 3: Integration
@@ -173,7 +169,13 @@ Zod v4 provides:
 - **Change**: Used Zod v4's built-in JSON schema generation instead of `zod-to-json-schema` package
 - **Benefit**: Simpler dependency tree, better compatibility with Zod v4
 
-#### Field Descriptions via `.describe()` Method (current)
+#### Field Descriptions via `.describe()` Method (c23af74)
 - **Added comprehensive descriptions** for all schema fields using Zod v4's `.describe()` method
 - Descriptions are automatically included in the generated JSON schemas
 - Improves developer experience and API documentation
+
+#### Schema Co-location (current)
+- **Changed approach**: Co-located schemas with tool implementations instead of centralized `schemas.ts` file
+- Each tool file now contains its own schema definitions
+- Uses `z.infer<>` for type inference instead of duplicate interface definitions
+- Better maintainability and clearer code organization
