@@ -193,7 +193,7 @@
   </div>
 
   <script type="module">
-    import { App, applyHostStyleVariables, applyHostFonts, applyDocumentTheme } from 'https://esm.sh/@modelcontextprotocol/ext-apps@1.0.1';
+    // Inline implementation of MCP Apps protocol (no external imports for CSP compatibility)
 
     // DOM elements
     const formContainer = document.getElementById('form-container');
@@ -207,40 +207,64 @@
     const selectedDisplay = document.getElementById('selected-display');
 
     let submitted = false;
-    let app = null;
+    let requestIdCounter = 1;
+
+    // Send JSON-RPC request to host
+    function sendRequest(method, params) {
+      const id = requestIdCounter++;
+      window.parent.postMessage({ jsonrpc: '2.0', id, method, params }, '*');
+      return id;
+    }
+
+    // Send JSON-RPC notification to host
+    function sendNotification(method, params) {
+      window.parent.postMessage({ jsonrpc: '2.0', method, params }, '*');
+    }
+
+    // Handle messages from host
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+      if (!data || !data.jsonrpc) return;
+
+      console.log('Received message from host:', data);
+
+      // Handle tool input notification
+      if (data.method === 'ui/notifications/tool-input') {
+        const args = data.params?.arguments || {};
+        console.log('Received tool input:', args);
+        renderForm(args.prompt, args.title, args.options);
+      }
+
+      // Handle tool result notification
+      if (data.method === 'ui/notifications/tool-result') {
+        const content = data.params?.content?.find(c => c.type === 'text');
+        if (content?.text) {
+          try {
+            const parsed = JSON.parse(content.text);
+            console.log('Received tool result:', parsed);
+            renderForm(parsed.prompt, parsed.title, parsed.options);
+          } catch (e) {
+            console.log('Tool result text (unparsed):', content.text);
+          }
+        }
+      }
+    });
 
     // Initialize the App connection
     async function init() {
-      app = new App(
-        { name: 'UserInputForm', version: '1.0.0' },
-        { /* capabilities */ }
-      );
+      console.log('Initializing MCP Apps connection...');
+      
+      // Send ui/initialize request
+      sendRequest('ui/initialize', {
+        protocolVersion: '2025-06-18',
+        appCapabilities: {},
+        clientInfo: { name: 'UserInputForm', version: '1.0.0' }
+      });
 
-      // Handle tool input (the arguments passed to user_apps_input)
-      app.ontoolinput = (params) => {
-        const args = params.arguments || {};
-        renderForm(args.prompt, args.title, args.options);
-      };
-
-      // Handle host context changes (theme updates)
-      app.onhostcontextchanged = (params) => {
-        if (params.context) {
-          applyHostStyleVariables(params.context);
-          applyHostFonts(params.context);
-          applyDocumentTheme(params.context);
-        }
-      };
-
-      // Connect to the host
-      await app.connect();
-
-      // Apply initial styling from host context
-      const hostContext = app.getHostContext?.();
-      if (hostContext) {
-        applyHostStyleVariables(hostContext);
-        applyHostFonts(hostContext);
-        applyDocumentTheme(hostContext);
-      }
+      // Send initialized notification
+      sendNotification('ui/notifications/initialized', {});
+      
+      console.log('MCP Apps initialized, waiting for tool input...');
     }
 
     // Render the form with the provided arguments
@@ -311,22 +335,23 @@
         selectedDisplay.textContent = 'Cancelled';
         selectedDisplay.classList.remove('hidden');
         inputSection.classList.add('hidden');
+      } else if (action === 'submit') {
+        selectedDisplay.textContent = `Submitted: ${value}`;
+        selectedDisplay.classList.remove('hidden');
+        inputSection.classList.add('hidden');
       }
 
-      // Send result back to host
-      // The host expects tool results to be sent via the tool's response
-      // For MCP Apps, we use callTool to send a response or just close
-      try {
-        // Notify the host of the result by calling a response method
-        // The App SDK allows sending results through various mechanisms
-        // For now, we log and the host will handle this
-        console.log('User input result:', { value, action });
-        
-        // If there's a way to send the result back, use it here
-        // The tool result flow in MCP Apps typically uses the tool response
-      } catch (err) {
-        console.error('Failed to send result:', err);
-      }
+      // Send result back to host via ui/update-model-context
+      // This updates the context the model sees in the next turn
+      const resultText = action === 'cancel' 
+        ? '❌ User cancelled the input request.'
+        : `✅ User response: ${value}`;
+
+      console.log('Sending result to host:', resultText);
+      
+      sendRequest('ui/update-model-context', {
+        content: [{ type: 'text', text: resultText }]
+      });
     }
 
     // Auto-resize textarea as user types
