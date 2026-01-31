@@ -6,7 +6,7 @@ Add Zod v4 for schema definition and input validation as part of the tools confi
 
 ## Status
 
-🟡 **In Progress**
+🟢 **Complete**
 
 ## Background
 
@@ -79,56 +79,57 @@ Zod v4 provides:
 
 ### Files to Create/Modify
 
-- [ ] `package.json` - Add zod and zod-to-json-schema dependencies
-- [ ] `src/tools/schemas.ts` - Define Zod schemas for all tools
-- [ ] `src/tools/electron-user-input.ts` - Integrate Zod validation
-- [ ] `src/tools/elicitation.ts` - Integrate Zod validation
-- [ ] `src/tools/apps-user-input.ts` - Integrate Zod validation
-- [ ] `src/tools/types.ts` - Update types to use Zod inference
-- [ ] `tsconfig.json` - Verify Zod compatibility settings
+- [x] `package.json` - Add zod and zod-to-json-schema dependencies
+- [x] `src/tools/schemas.ts` - Define Zod schemas for all tools
+- [x] `src/tools/electron-user-input.ts` - Integrate Zod validation
+- [x] `src/tools/elicitation.ts` - Integrate Zod validation
+- [x] `src/tools/apps-user-input.ts` - Integrate Zod validation
+- [x] `src/tools/types.ts` - Update types to use Zod inference (not needed - types maintained for backwards compatibility)
+- [x] `tsconfig.json` - Verify Zod compatibility settings (no changes needed)
 
 ## Implementation Tasks
 
 ### Phase 1: Setup & Dependencies
 
-- [ ] Install `zod` (v4.x)
-- [ ] Install `zod-to-json-schema`
-- [ ] Verify build compatibility
-- [ ] Check for any TypeScript config updates needed
+- [x] Install `zod` (v4.3.6)
+- [x] Use Zod v4 native `toJSONSchema()` function (no external package needed)
+- [x] Verify build compatibility
+- [x] Check for any TypeScript config updates needed
 
 ### Phase 2: Schema Definitions
 
-- [ ] Create `src/tools/schemas.ts`
-- [ ] Define Zod schema for `user_input` tool
-- [ ] Define Zod schema for `user_elicitation` tool
-- [ ] Define Zod schema for `user_apps_input` tool
-- [ ] Define Zod schema for `await_apps_response` tool
-- [ ] Define Zod schema for `__internal__apps_submit` tool
-- [ ] Export inferred types from schemas
+- [x] Create `src/tools/schemas.ts`
+- [x] Define Zod schema for `user_input` tool
+- [x] Define Zod schema for `user_elicitation` tool
+- [x] Define Zod schema for `user_apps_input` tool
+- [x] Define Zod schema for `await_apps_response` tool
+- [x] Define Zod schema for `__internal__apps_submit` tool
+- [x] Export inferred types from schemas
+- [x] Add descriptions to all schema fields
 
 ### Phase 3: Integration
 
-- [ ] Update `electron-user-input.ts` to use Zod validation
-- [ ] Update `elicitation.ts` to use Zod validation
-- [ ] Update `apps-user-input.ts` to use Zod validation
-- [ ] Convert manual validation to Zod schema validation
-- [ ] Update error messages to use Zod validation errors
-- [ ] Test all tools with valid and invalid inputs
+- [x] Update `electron-user-input.ts` to use Zod validation
+- [x] Update `elicitation.ts` to use Zod validation
+- [x] Update `apps-user-input.ts` to use Zod validation
+- [x] Convert manual validation to Zod schema validation
+- [x] Update error messages to use Zod validation errors
+- [x] Test all tools with valid and invalid inputs
 
 ### Phase 4: Testing & Validation
 
-- [ ] Test `user_input` with various inputs
-- [ ] Test `user_elicitation` with various inputs
-- [ ] Test `user_apps_input` with various inputs
-- [ ] Test `await_apps_response` with various inputs
-- [ ] Verify error messages are clear and actionable
-- [ ] Build and verify no breaking changes
+- [x] Test `user_input` with various inputs
+- [x] Test `user_elicitation` with various inputs
+- [x] Test `user_apps_input` with various inputs
+- [x] Test `await_apps_response` with various inputs
+- [x] Verify error messages are clear and actionable
+- [x] Build and verify no breaking changes
 
 ### Phase 5: Documentation
 
-- [ ] Update README if needed
-- [ ] Add code comments for schema definitions
-- [ ] Document validation patterns used
+- [x] Update README if needed (no changes needed - API remains the same)
+- [x] Add code comments for schema definitions
+- [x] Document validation patterns used
 
 ## Testing Plan
 
@@ -167,8 +168,12 @@ Zod v4 provides:
 
 ### Extras added beyond original spec
 
-<!-- Example format:
-#### Feature/Change Name (commit-hash)
-- **What was added/changed** - Brief description
-- Any relevant implementation details
--->
+#### Zod v4 Native JSON Schema Support (849a7ae)
+- **Discovery**: Zod v4 includes native `toJSONSchema()` function
+- **Change**: Used Zod v4's built-in JSON schema generation instead of `zod-to-json-schema` package
+- **Benefit**: Simpler dependency tree, better compatibility with Zod v4
+
+#### Field Descriptions via `.describe()` Method (current)
+- **Added comprehensive descriptions** for all schema fields using Zod v4's `.describe()` method
+- Descriptions are automatically included in the generated JSON schemas
+- Improves developer experience and API documentation
