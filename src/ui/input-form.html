@@ -31,18 +31,26 @@
       font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
       font-size: var(--vscode-font-size, 13px);
       color: var(--vscode-foreground);
-      background: var(--vscode-editor-background);
+      background: var(--vscode-sideBar-background);
       margin: 0;
-      padding: 12px;
+      padding: 12px 0 0 0;
       line-height: 1.4;
     }
 
     .form-container {
       max-width: 100%;
+      background: var(--vscode-editor-background);
+      border-radius: 8px;
+      padding: 12px;
     }
 
     .form-container.disabled {
-      opacity: 0.6;
+      opacity: 0.8;
+    }
+
+    .form-container.disabled .btn,
+    .form-container.disabled .option-button,
+    .form-container.disabled textarea {
       pointer-events: none;
     }
 
@@ -169,19 +177,14 @@
     .debug-panel {
       margin-top: 16px;
       padding: 8px;
-      background: #f5f5f5;
-      border: 1px solid #ddd;
+      background: var(--vscode-input-background);
+      border: 1px solid var(--vscode-input-border);
       border-radius: 4px;
       font-size: 11px;
       font-family: monospace;
       max-height: 150px;
       overflow-y: auto;
-    }
-
-    .debug-panel.dark {
-      background: #1e1e1e;
-      border-color: #444;
-      color: #ccc;
+      color: var(--vscode-foreground);
     }
 
     .debug-entry {
@@ -190,15 +193,27 @@
     }
 
     .debug-entry.sent {
-      color: #0066cc;
+      color: #4fc3f7;
     }
 
     .debug-entry.received {
-      color: #008800;
+      color: #81c784;
     }
 
     .debug-entry.error {
-      color: #cc0000;
+      color: #ef5350;
+    }
+
+    @media (prefers-color-scheme: light) {
+      .debug-entry.sent {
+        color: #0066cc;
+      }
+      .debug-entry.received {
+        color: #008800;
+      }
+      .debug-entry.error {
+        color: #cc0000;
+      }
     }
   </style>
 </head>

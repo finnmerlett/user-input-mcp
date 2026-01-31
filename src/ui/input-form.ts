@@ -25,6 +25,7 @@ const debugLogEl = document.getElementById('debug-log')!
 // Internal state
 let submitted = false
 let app: App | null = null
+let currentRequestId: string | null = null
 
 // Debug logging
 function debug(message: string, type: 'info' | 'sent' | 'received' | 'error' = 'info') {
@@ -120,37 +121,37 @@ async function submitResult(value: string | null, action: 'option' | 'submit' | 
   }
 
   // Build the message to send
-  const messageText = action === 'cancel' 
-    ? '[User cancelled the input request]'
+  const responseText = action === 'cancel' 
+    ? undefined
     : value!
+  const cancelled = action === 'cancel'
 
-  debug('Sending user response: ' + messageText.substring(0, 50))
+  debug(`Storing response (requestId: ${currentRequestId}, cancelled: ${cancelled})`)
 
   if (!app) {
     debug('No app connection available', 'error')
     return
   }
 
+  if (!currentRequestId) {
+    debug('No requestId available - cannot store response', 'error')
+    return
+  }
+
   try {
-    // Use updateModelContext to add user response to the conversation context
-    // This updates the context for the next model turn
-    await app.updateModelContext({
-      content: [{ type: 'text', text: `User response: ${messageText}` }]
+    // Call the _apps_store_response tool to store the response
+    // The agent will retrieve this via await_apps_response
+    const result = await app.callServerTool({
+      name: '_apps_store_response',
+      arguments: {
+        requestId: currentRequestId,
+        response: responseText,
+        cancelled: cancelled,
+      },
     })
-    debug('Model context updated with user response')
+    debug('Response stored successfully: ' + JSON.stringify(result).substring(0, 100))
   } catch (err) {
-    debug('Failed to update model context: ' + (err as Error).message, 'error')
-    
-    // Fallback: try sendMessage (may paste into chat input)
-    try {
-      await app.sendMessage({
-        role: 'user',
-        content: [{ type: 'text', text: messageText }]
-      })
-      debug('Fallback: Message sent via sendMessage')
-    } catch (err2) {
-      debug('Fallback also failed: ' + (err2 as Error).message, 'error')
-    }
+    debug('Failed to store response: ' + (err as Error).message, 'error')
   }
 }
 
@@ -191,12 +192,21 @@ async function init() {
       }
     }
 
-    // Handle tool result - fallback for parsing structured content
+    // Handle tool result - this is where we get the requestId from structuredContent
     app.ontoolresult = (result) => {
-      debug('Tool result received: ' + JSON.stringify(result).substring(0, 80))
-      // Try to parse structured content for form data
+      debug('Tool result received: ' + JSON.stringify(result).substring(0, 120))
+      // Extract requestId and form data from structured content
       if (result.structuredContent) {
-        const sc = result.structuredContent as { prompt?: string; title?: string; options?: string[] }
+        const sc = result.structuredContent as { 
+          requestId?: string
+          prompt?: string
+          title?: string
+          options?: string[]
+        }
+        if (sc.requestId) {
+          currentRequestId = sc.requestId
+          debug('Got requestId: ' + currentRequestId)
+        }
         if (sc.prompt) {
           renderForm(sc.prompt, sc.title, sc.options)
         }
