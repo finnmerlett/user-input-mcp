@@ -69,7 +69,13 @@ export default function App() {
   
   // Form state
   const [submitted, setSubmitted] = useState(false)
-  const [inputSectionOpen, setInputSectionOpen] = useState(false)
+  // Only open input section by default if showInput is true or no options
+  const [inputSectionOpen, setInputSectionOpen] = useState(() => {
+    // Evaluate initial state based on formArgs (which may be empty at first)
+    if (formArgs.showInput) return true;
+    if (formArgs.options && Array.isArray(formArgs.options) && formArgs.options.length > 0) return false;
+    return true;
+  });
   const [textValue, setTextValue] = useState('')
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
@@ -104,8 +110,11 @@ export default function App() {
   
   // Initialize input section state based on showInput or hasOptions
   useEffect(() => {
+    // Only open input section if showInput is true or there are no options
     if (showInput || !hasOptions) {
       setInputSectionOpen(true)
+    } else {
+      setInputSectionOpen(false)
     }
   }, [showInput, hasOptions])
   
