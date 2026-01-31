@@ -244,10 +244,10 @@ async function submitResult(value: string | null, action: 'option' | 'submit' | 
   }
 
   try {
-    // Call the _apps_store_response tool to store the response
+    // Call the __internal__apps_submit tool to store the response
     // The agent will retrieve this via await_apps_response
     const result = await app.callServerTool({
-      name: '_apps_store_response',
+      name: '__internal__apps_submit',
       arguments: {
         requestId: currentRequestId,
         response: responseText,

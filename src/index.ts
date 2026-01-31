@@ -18,11 +18,16 @@ import { AVAILABLE_TOOLS, isValidToolName } from './tools/index.js'
 import { USER_INPUT_FORM_RESOURCE, USER_INPUT_FORM_URI } from './tools/apps-user-input.js'
 import { readInstructions } from './utils/instructions.js'
 
+// Increase listener limit on stdio streams to prevent MaxListenersExceededWarning
+// This happens because the MCP SDK's stdio transport adds drain listeners for each write
+process.stdout.setMaxListeners(50)
+process.stdin.setMaxListeners(50)
+
 /**
  * Create and run the MCP server
  */
 async function main() {
-  const tools = Object.values(AVAILABLE_TOOLS)
+  const allTools = Object.values(AVAILABLE_TOOLS)
 
   // Read the server instructions
   const instructions = readInstructions()
@@ -52,7 +57,7 @@ async function main() {
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
-      tools,
+      tools: allTools,
     }
   })
 

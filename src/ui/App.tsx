@@ -161,7 +161,7 @@ export default function App() {
     
     try {
       await app.callServerTool({
-        name: '_apps_store_response',
+        name: '__internal__apps_submit',
         arguments: {
           requestId,
           response: responseText,
