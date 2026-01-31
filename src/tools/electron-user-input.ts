@@ -3,14 +3,39 @@ import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
+import { z, toJSONSchema } from 'zod'
 
 import { ServerResult } from "@modelcontextprotocol/sdk/types.js";
 
-import { UserInputSchema, toJsonSchema } from './schemas.js';
 import type { ToolWithHandler } from "./types.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+/**
+ * Schema for user_input tool (Electron dialog-based input)
+ */
+const UserInputSchema = z.object({
+  prompt: z
+    .string()
+    .min(1, 'Prompt must not be empty')
+    .describe('The prompt to display to the user'),
+  title: z
+    .string()
+    .optional()
+    .describe('The title of the input dialog (optional)'),
+})
+
+/**
+ * Convert a Zod schema to JSON Schema for MCP protocol
+ */
+function toJsonSchema(schema: z.ZodTypeAny): any {
+  const jsonSchema = toJSONSchema(schema) as any
+  if (jsonSchema && typeof jsonSchema === 'object' && '$schema' in jsonSchema) {
+    delete jsonSchema.$schema
+  }
+  return jsonSchema
+}
 
 /**
  * Show Electron dialog and get user input

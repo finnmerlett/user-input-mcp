@@ -4,17 +4,82 @@ import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import type { ServerResult } from '@modelcontextprotocol/sdk/types.js'
 import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server'
+import { z, toJSONSchema } from 'zod'
 
-import {
-  UserAppsInputSchema,
-  AwaitAppsResponseSchema,
-  InternalAppsSubmitSchema,
-  toJsonSchema,
-} from './schemas.js'
 import { ToolWithHandler } from './types.js'
 
 // Get the directory of the current module
 const __dirname = dirname(fileURLToPath(import.meta.url))
+
+/**
+ * Schema for user_apps_input tool (MCP Apps inline UI)
+ */
+const UserAppsInputSchema = z.object({
+  prompt: z
+    .string()
+    .min(1, 'Prompt must not be empty')
+    .describe('The question or prompt to display to the user'),
+  title: z
+    .string()
+    .optional()
+    .describe('Optional title for the input form'),
+  options: z
+    .array(z.string())
+    .optional()
+    .describe(
+      'Optional array of quick-select button labels for common responses. An "Other..." button is automatically added.'
+    ),
+  showInput: z
+    .boolean()
+    .optional()
+    .describe(
+      'Whether to show the free text input box initially. Defaults to true if no options provided, false if options are provided. Users can always click "Other..." to show the input.'
+    ),
+})
+
+/**
+ * Schema for await_apps_response tool
+ */
+const AwaitAppsResponseSchema = z.object({
+  requestId: z
+    .string()
+    .uuid('Request ID must be a valid UUID')
+    .describe('The requestId returned by user_apps_input'),
+  timeout: z
+    .number()
+    .positive('Timeout must be positive')
+    .optional()
+    .describe('Optional timeout in milliseconds (default: 10 minutes)'),
+})
+
+/**
+ * Schema for __internal__apps_submit tool
+ */
+const InternalAppsSubmitSchema = z.object({
+  requestId: z
+    .string()
+    .uuid('Request ID must be a valid UUID')
+    .describe('The unique request ID from the user_apps_input call'),
+  response: z
+    .string()
+    .optional()
+    .describe("The user's response text"),
+  cancelled: z
+    .boolean()
+    .optional()
+    .describe('Whether the user cancelled the input request'),
+})
+
+/**
+ * Convert a Zod schema to JSON Schema for MCP protocol
+ */
+function toJsonSchema(schema: z.ZodTypeAny): any {
+  const jsonSchema = toJSONSchema(schema) as any
+  if (jsonSchema && typeof jsonSchema === 'object' && '$schema' in jsonSchema) {
+    delete jsonSchema.$schema
+  }
+  return jsonSchema
+}
 
 /**
  * In-memory storage for pending user responses.
@@ -125,21 +190,6 @@ function readInputFormHtml(): string {
   // In the build output, the HTML file is at ../ui/input-form.html relative to tools/
   const htmlPath = join(__dirname, '..', 'ui', 'input-form.html')
   return readFileSync(htmlPath, 'utf-8')
-}
-
-/**
- * Input schema for the inline_ui_user_input tool
- * (kept for backwards compatibility, but now uses Zod schema)
- */
-export interface InlineUiUserInputArgs {
-  /** The question or prompt to show to the user */
-  prompt: string
-  /** Optional title for the form */
-  title?: string
-  /** Optional array of quick-select button labels */
-  options?: string[]
-  /** Whether to show the free text input box (defaults to true if no options, false if options provided) */
-  showInput?: boolean
 }
 
 /**
