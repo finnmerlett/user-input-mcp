@@ -4,9 +4,10 @@ import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import type { ServerResult } from '@modelcontextprotocol/sdk/types.js'
 import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server'
-import { z, toJSONSchema } from 'zod'
+import { z } from 'zod'
 
 import { ToolWithHandler } from './types.js'
+import { toJsonSchema } from './zod-utils.js'
 
 // Get the directory of the current module
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -69,17 +70,6 @@ const InternalAppsSubmitSchema = z.object({
     .optional()
     .describe('Whether the user cancelled the input request'),
 })
-
-/**
- * Convert a Zod schema to JSON Schema for MCP protocol
- */
-function toJsonSchema(schema: z.ZodTypeAny): any {
-  const jsonSchema = toJSONSchema(schema) as any
-  if (jsonSchema && typeof jsonSchema === 'object' && '$schema' in jsonSchema) {
-    delete jsonSchema.$schema
-  }
-  return jsonSchema
-}
 
 /**
  * In-memory storage for pending user responses.

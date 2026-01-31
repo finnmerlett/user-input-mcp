@@ -1,7 +1,8 @@
 import { ElicitResultSchema, type ServerResult } from '@modelcontextprotocol/sdk/types.js'
-import { z, toJSONSchema } from 'zod'
+import { z } from 'zod'
 
 import { ToolWithHandler } from './types.js'
+import { toJsonSchema } from './zod-utils.js'
 
 /**
  * Schema for user_elicitation tool (MCP elicitation API)
@@ -12,17 +13,6 @@ const UserElicitationSchema = z.object({
     .min(1, 'Prompt must not be empty')
     .describe('The prompt to display to the user'),
 })
-
-/**
- * Convert a Zod schema to JSON Schema for MCP protocol
- */
-function toJsonSchema(schema: z.ZodTypeAny): any {
-  const jsonSchema = toJSONSchema(schema) as any
-  if (jsonSchema && typeof jsonSchema === 'object' && '$schema' in jsonSchema) {
-    delete jsonSchema.$schema
-  }
-  return jsonSchema
-}
 
 export const USER_ELICITATION_TOOL: ToolWithHandler = {
   name: 'user_elicitation',
