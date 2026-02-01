@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useApp, useHostStyles } from '@modelcontextprotocol/ext-apps/react'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 // Configure marked to treat line breaks as <br> (like the electron version)
 marked.use({ breaks: true })
@@ -64,8 +65,9 @@ export default function App() {
     },
   })
   
-  // Apply host styles
-  useHostStyles(app, app?.getHostContext())
+  // Apply host styles (with guard for undefined hostContext)
+  const hostContext = useMemo(() => app?.getHostContext() || {}, [app])
+  useHostStyles(app, hostContext)
   
   // Form state
   const [submitted, setSubmitted] = useState(false)
@@ -119,12 +121,13 @@ export default function App() {
   
   const hasOptions = filteredOptions && filteredOptions.length > 0
   
-  // Parse prompt as markdown
-  const promptHtml = useMemo(() => {
+  // Parse prompt as markdown and sanitize to prevent XSS
+  const promptHtmlSafe = useMemo(() => {
     let text = prompt || 'Please provide your input:'
     // Unescape newlines that may have been double-escaped in JSON
     text = text.replace(/\\n/g, '\n')
-    return marked.parse(text) as string
+    const rawHtml = marked.parse(text) as string
+    return DOMPurify.sanitize(rawHtml)
   }, [prompt])
   
   // Determine if we should use list layout
@@ -288,7 +291,7 @@ export default function App() {
   return (
     <div className={`form-container ${submitted ? 'disabled' : ''}`}>
       {title && <h2 className="title">{title}</h2>}
-      <div className="prompt" dangerouslySetInnerHTML={{ __html: promptHtml }} />
+      <div className="prompt" dangerouslySetInnerHTML={{ __html: promptHtmlSafe }} />
       
       {/* Options */}
       {(hasOptions || !submitted) && (

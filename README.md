@@ -80,7 +80,8 @@ Displays an interactive HTML form inline within the chat interface using the MCP
   - VS Code theme integration (light/dark mode)
   - Auto-expanding multiline textarea
   - Quick-select option buttons
-  - Ctrl/Cmd+Enter to submit
+  - Enter to submit, Shift+Enter for new lines
+- **Two-tool pattern**: This tool returns immediately with a `requestId`. You must then call `await_apps_response` with that `requestId` to wait for and retrieve the user's actual input.
 
 **Example**:
 ```json
@@ -93,6 +94,32 @@ Displays an interactive HTML form inline within the chat interface using the MCP
   }
 }
 ```
+
+---
+
+#### `await_apps_response`
+
+Waits for and retrieves the user's response from a `user_apps_input` call. This tool must be called after `user_apps_input` to get the actual user input.
+
+- **Parameters**:
+  - `requestId` (required): The `requestId` returned by `user_apps_input`
+  - `timeout` (optional): Timeout in milliseconds (default: 120 minutes)
+- **Behavior**: Blocks until the user submits their response or the timeout expires
+
+**Example**:
+```json
+{
+  "name": "await_apps_response",
+  "arguments": {
+    "requestId": "uuid-from-user_apps_input"
+  }
+}
+```
+
+**Response**:
+- On success: Returns the user's response text
+- On cancel: Returns a cancellation indicator
+- On timeout: Returns an error
 
 ---
 

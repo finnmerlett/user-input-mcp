@@ -19,7 +19,7 @@ export default defineConfig({
   plugins: [react(), viteSingleFile()],
   build: {
     outDir: '../../build/ui',
-    emptyOutDir: false, // Don't empty since we build multiple times
+    emptyOutDir: false, // Don't empty; build may be run multiple times with different BUILD_ENTRY values
     target: 'esnext',
     rollupOptions: {
       input: resolve(__dirname, `src/ui/${entry}.html`),

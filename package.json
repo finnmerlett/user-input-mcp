@@ -28,12 +28,14 @@
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.0.1",
     "@modelcontextprotocol/sdk": "^1.25.2",
+    "dompurify": "^3.3.1",
     "electron": "^33.4.11",
     "marked": "^17.0.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@types/dompurify": "^3.2.0",
     "@types/node": "^22.19.6",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",

@@ -23,8 +23,8 @@ interface PendingRequest {
 
 const pendingRequests = new Map<string, PendingRequest>()
 
-// Default timeout for awaiting response (10 minutes)
-const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000
+// Default timeout for awaiting response (120 minutes, matching documentation)
+const DEFAULT_TIMEOUT_MS = 120 * 60 * 1000
 
 /**
  * Store a response for a pending request.
@@ -85,7 +85,9 @@ export function waitForResponse(requestId: string, timeoutMs: number = DEFAULT_T
     setTimeout(() => {
       const p = pendingRequests.get(requestId)
       if (p && !p.resolved) {
+        // Remove this resolver and clean up the pending request to avoid leaks
         p.resolvers = p.resolvers.filter((r) => r !== resolve)
+        pendingRequests.delete(requestId)
         reject(new Error('Timeout waiting for user response'))
       }
     }, timeoutMs)

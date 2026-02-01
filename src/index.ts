@@ -27,6 +27,7 @@ process.stdin.setMaxListeners(50)
  * Create and run the MCP server
  */
 async function main() {
+  // Internal tool must be included otherwise it can't be called by the app UI
   const allTools = Object.values(AVAILABLE_TOOLS)
 
   // Read the server instructions
