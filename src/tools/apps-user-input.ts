@@ -69,7 +69,7 @@ export function storeResponse(requestId: string, response: string | undefined, c
 
 /**
  * Wait for a response from the UI.
- * Called by await_apps_response tool.
+ * Called by await_inline_ui_response tool.
  */
 export function waitForResponse(requestId: string, timeoutMs?: number): Promise<{ response?: string; cancelled?: boolean }> {
   return new Promise((resolve, reject) => {
@@ -142,7 +142,7 @@ export interface InlineUiUserInputArgs {
 export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
   name: 'inline_ui_user_input',
   description:
-    'Display an interactive form to collect user input during generation. Supports optional quick-select buttons for common responses. An "Other..." button is always added when options are provided, allowing users to enter free text.',
+    'Display an interactive form to collect user input during generation. Supports optional quick-select buttons for common responses. A "Something else..." button is always added when options are provided, allowing users to enter free text.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -159,11 +159,11 @@ export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
         items: {
           type: 'string',
         },
-        description: 'Optional array of quick-select button labels for common responses. An "Other..." button is automatically added.',
+        description: 'Optional array of quick-select button labels for common responses. A "Something else..." button is automatically added.',
       },
       showInput: {
         type: 'boolean',
-        description: 'Whether to show the free text input box initially. Defaults to true if no options provided, false if options are provided. Users can always click "Other..." to show the input.',
+        description: 'Whether to show the free text input box initially. Defaults to true if no options provided, false if options are provided. Users can always click "Something else..." to show the input.',
       },
     },
     required: ['prompt'],
@@ -210,12 +210,12 @@ export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
 
     // Return the parameters including requestId for the UI
     // The UI will display the form and call __internal__submit_ui_response when user submits
-    // The agent should then call await_apps_response(requestId) to get the response
+    // The agent should then call await_inline_ui_response(requestId) to get the response
     return {
       content: [
         {
           type: 'text',
-          text: `Input form displayed. Call await_apps_response with requestId: ${requestId} to get the user's response.`,
+          text: `Input form displayed. Call await_inline_ui_response with requestId: ${requestId} to get the user's response.`,
         },
       ],
       structuredContent: {
@@ -233,7 +233,7 @@ export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
 /**
  * Internal tool for the UI to store user responses.
  * Called by the MCP Apps UI when the user submits their input.
- * This stores the response in memory for await_apps_response to retrieve.
+ * This stores the response in memory for await_inline_ui_response to retrieve.
  */
 export const _SUBMIT_UI_RESPONSE_TOOL: ToolWithHandler = {
   name: '__internal__submit_ui_response',
