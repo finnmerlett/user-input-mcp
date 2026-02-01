@@ -81,6 +81,33 @@ export default function App() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   
+  // LocalStorage key prefix for persisting completed state
+  const STORAGE_KEY_PREFIX = 'mcp-user-input-completed-'
+  
+  // Restore completed state from localStorage when requestId is set
+  useEffect(() => {
+    if (!requestId) return
+    
+    try {
+      const storedData = localStorage.getItem(`${STORAGE_KEY_PREFIX}${requestId}`)
+      if (storedData) {
+        const parsed = JSON.parse(storedData) as {
+          submitted: boolean
+          statusMessage: string | null
+          selectedOption: string | null
+        }
+        if (parsed.submitted) {
+          setSubmitted(true)
+          setStatusMessage(parsed.statusMessage)
+          setSelectedOption(parsed.selectedOption)
+          setInputSectionOpen(false)
+        }
+      }
+    } catch (err) {
+      console.warn('[MCP] Failed to restore state from localStorage:', err)
+    }
+  }, [requestId])
+  
   const { prompt, title, options, showInput } = formArgs
   
   // Filter out options that match "something else" pattern (we add our own)
@@ -152,20 +179,37 @@ export default function App() {
     
     // Build response
     let responseText: string | undefined
+    let newStatusMessage: string | null = null
+    let newSelectedOption: string | null = null
+    
     if (action === 'cancel') {
       responseText = undefined
-      setStatusMessage('Cancelled')
+      newStatusMessage = 'Cancelled'
     } else if (action === 'option' && freeText) {
       responseText = `${value}\n\nAdditional text: ${freeText}`
-      setStatusMessage(`Selected: ${value} (with text: ${freeText})`)
-      setSelectedOption(value)
+      newStatusMessage = `Selected: ${value} (with text: ${freeText})`
+      newSelectedOption = value
     } else if (action === 'option') {
       responseText = value!
-      setStatusMessage(`Selected: ${value}`)
-      setSelectedOption(value)
+      newStatusMessage = `Selected: ${value}`
+      newSelectedOption = value
     } else {
       responseText = value!
-      setStatusMessage(`Submitted: ${value}`)
+      newStatusMessage = `Submitted: ${value}`
+    }
+    
+    setStatusMessage(newStatusMessage)
+    setSelectedOption(newSelectedOption)
+    
+    // Persist completed state to localStorage
+    try {
+      localStorage.setItem(`${STORAGE_KEY_PREFIX}${requestId}`, JSON.stringify({
+        submitted: true,
+        statusMessage: newStatusMessage,
+        selectedOption: newSelectedOption,
+      }))
+    } catch (err) {
+      console.warn('[MCP] Failed to persist state to localStorage:', err)
     }
     
     try {
