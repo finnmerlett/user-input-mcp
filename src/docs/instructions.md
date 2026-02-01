@@ -15,11 +15,16 @@ Uses the MCP elicitation API for native client-side input. Preferred when the cl
 - **Parameters**: `prompt` (required)
 - **Timeout**: No default timeout (configurable via `USER_INPUT_TIMEOUT_MINUTES` env var)
 
-### `user_apps_input`
+### `inline_ui_user_input`
 Uses the MCP Apps protocol to display a rich UI for user input in clients that support it.
 - **Parameters**: `prompt` (required), `options` (optional array of choices), `title` (optional)
 - **Timeout**: No default timeout (configurable via `USER_INPUT_TIMEOUT_MINUTES` env var)
 - **Note**: A "Something else..." button that triggers free text input is always added automatically. Do NOT include your own "Something else" or similar variant in the options array.
+- **Two-tool pattern**: After calling this tool, you must call `await_inline_ui_response` with the returned `requestId` to get the user's response.
+
+### `await_inline_ui_response`
+Waits for and retrieves the user's response from an `inline_ui_user_input` call.
+- **Parameters**: `requestId` (required) - the requestId returned by `inline_ui_user_input`
 
 ## Constraints & Limitations
 

@@ -89,7 +89,7 @@ The server provides three tools for requesting user input:
 
 ---
 
-#### `user_apps_input` ⭐ Recommended
+#### `inline_ui_user_input` ⭐ Recommended
 
 Displays an interactive HTML form inline within the chat interface using the MCP Apps protocol. Best for modern MCP clients that support MCP Apps (VS Code Insiders, Claude Desktop with MCP Apps support).
 
@@ -103,12 +103,12 @@ Displays an interactive HTML form inline within the chat interface using the MCP
   - Auto-expanding multiline textarea
   - Quick-select option buttons
   - Enter to submit, Shift+Enter for new lines
-- **Two-tool pattern**: This tool returns immediately with a `requestId`. You must then call `await_apps_response` with that `requestId` to wait for and retrieve the user's actual input.
+- **Two-tool pattern**: This tool returns immediately with a `requestId`. You must then call `await_inline_ui_response` with that `requestId` to wait for and retrieve the user's actual input.
 
 **Example**:
 ```json
 {
-  "name": "user_apps_input",
+  "name": "inline_ui_user_input",
   "arguments": {
     "prompt": "How would you like to proceed?",
     "title": "Next Steps",
@@ -119,20 +119,20 @@ Displays an interactive HTML form inline within the chat interface using the MCP
 
 ---
 
-#### `await_apps_response`
+#### `await_inline_ui_response`
 
-Waits for and retrieves the user's response from a `user_apps_input` call. This tool must be called after `user_apps_input` to get the actual user input.
+Waits for and retrieves the user's response from an `inline_ui_user_input` call. This tool must be called after `inline_ui_user_input` to get the actual user input.
 
 - **Parameters**:
-  - `requestId` (required): The `requestId` returned by `user_apps_input`
+  - `requestId` (required): The `requestId` returned by `inline_ui_user_input`
 - **Behavior**: Blocks until the user submits their response or cancels
 
 **Example**:
 ```json
 {
-  "name": "await_apps_response",
+  "name": "await_inline_ui_response",
   "arguments": {
-    "requestId": "uuid-from-user_apps_input"
+    "requestId": "uuid-from-inline_ui_user_input"
   }
 }
 ```
@@ -194,7 +194,7 @@ Uses the MCP elicitation API to request input directly through the client's nati
 
 ### Choosing Between Tools
 
-| Feature | `user_apps_input` | `user_input` | `user_elicitation` |
+| Feature | `inline_ui_user_input` | `user_input` | `user_elicitation` |
 |---------|------------------|--------------|-------------------|
 | Interface | Inline HTML in chat | Electron GUI dialog | Client's native UI |
 | Theme support | ✅ VS Code themes | ❌ No | ⚠️ Partial |

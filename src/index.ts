@@ -38,7 +38,7 @@ async function main() {
    *
    * This MCP server provides tools for requesting user input during AI-assisted workflows.
    * Available tools:
-   * - user_apps_input: Inline HTML form via MCP Apps protocol (recommended)
+   * - inline_ui_user_input: Inline HTML form via MCP Apps protocol (recommended)
    * - user_input: GUI-based input via Electron dialog
    * - user_elicitation: Input via MCP elicitation API (requires client support)
    */

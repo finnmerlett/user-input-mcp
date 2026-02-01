@@ -122,9 +122,9 @@ function readInputFormHtml(): string {
 }
 
 /**
- * Input schema for the user_apps_input tool
+ * Input schema for the inline_ui_user_input tool
  */
-export interface UserAppsInputArgs {
+export interface InlineUiUserInputArgs {
   /** The question or prompt to show to the user */
   prompt: string
   /** Optional title for the form */
@@ -139,8 +139,8 @@ export interface UserAppsInputArgs {
  * MCP Apps-based user input tool.
  * Displays an interactive form UI for collecting user input.
  */
-export const USER_APPS_INPUT_TOOL: ToolWithHandler = {
-  name: 'user_apps_input',
+export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
+  name: 'inline_ui_user_input',
   description:
     'Display an interactive form to collect user input during generation. Supports optional quick-select buttons for common responses. An "Other..." button is always added when options are provided, allowing users to enter free text.',
   inputSchema: {
@@ -175,7 +175,7 @@ export const USER_APPS_INPUT_TOOL: ToolWithHandler = {
     },
   },
   handler: async (args, _extra): Promise<ServerResult> => {
-    const localArgs = args as UserAppsInputArgs
+    const localArgs = args as InlineUiUserInputArgs
 
     if (!localArgs.prompt || typeof localArgs.prompt !== 'string') {
       throw new Error('Missing required argument: prompt')
@@ -244,7 +244,7 @@ export const _APPS_SUBMIT_TOOL: ToolWithHandler = {
     properties: {
       requestId: {
         type: 'string',
-        description: 'The unique request ID from the user_apps_input call',
+        description: 'The unique request ID from the inline_ui_user_input call',
       },
       response: {
         type: 'string',
@@ -285,16 +285,16 @@ export const _APPS_SUBMIT_TOOL: ToolWithHandler = {
  * Tool for the agent to await user response.
  * This blocks until the user submits their input via the UI.
  */
-export const AWAIT_APPS_RESPONSE_TOOL: ToolWithHandler = {
-  name: 'await_apps_response',
+export const AWAIT_INLINE_UI_RESPONSE_TOOL: ToolWithHandler = {
+  name: 'await_inline_ui_response',
   description:
-    'Wait for and retrieve the user response from a user_apps_input call. Call this after user_apps_input to get the actual user input. This will block until the user submits their response.',
+    'Wait for and retrieve the user response from an inline_ui_user_input call. Call this after inline_ui_user_input to get the actual user input. This will block until the user submits their response.',
   inputSchema: {
     type: 'object',
     properties: {
       requestId: {
         type: 'string',
-        description: 'The requestId returned by user_apps_input',
+        description: 'The requestId returned by inline_ui_user_input',
       },
     },
     required: ['requestId'],
