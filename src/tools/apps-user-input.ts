@@ -38,7 +38,7 @@ const getTimeoutMs = (): number | undefined => {
 
 /**
  * Store a response for a pending request.
- * Called by the UI via __internal__apps_submit tool.
+ * Called by the UI via __internal__submit_ui_response tool.
  */
 export function storeResponse(requestId: string, response: string | undefined, cancelled: boolean): boolean {
   const pending = pendingRequests.get(requestId)
@@ -209,7 +209,7 @@ export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
     })
 
     // Return the parameters including requestId for the UI
-    // The UI will display the form and call __internal__apps_submit when user submits
+    // The UI will display the form and call __internal__submit_ui_response when user submits
     // The agent should then call await_apps_response(requestId) to get the response
     return {
       content: [
@@ -235,8 +235,8 @@ export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
  * Called by the MCP Apps UI when the user submits their input.
  * This stores the response in memory for await_apps_response to retrieve.
  */
-export const _APPS_SUBMIT_TOOL: ToolWithHandler = {
-  name: '__internal__apps_submit',
+export const _SUBMIT_UI_RESPONSE_TOOL: ToolWithHandler = {
+  name: '__internal__submit_ui_response',
   description:
     'Internal tool for MCP Apps UI to store user responses. Do not call directly.',
   inputSchema: {

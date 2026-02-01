@@ -226,7 +226,6 @@ This section documents additional work and changes made during implementation th
 - Improved documentation for await_apps_response tool
 - Fixed keyboard shortcut docs (Enter to submit, Shift+Enter for new lines)
 - Fixed memory leak on timeout (clean up pendingRequests map)
-- Hidden __internal__apps_submit from public tools list
 - Clarified vite emptyOutDir comment
 
 #### Timeout Configuration (b3cf056)
@@ -238,3 +237,7 @@ This section documents additional work and changes made during implementation th
 - **Renamed `user_apps_input` to `inline_ui_user_input`** for clearer intent
 - **Renamed `await_apps_response` to `await_inline_ui_response`**
 - Updated all documentation and variable names throughout codebase
+
+#### Internal Submit Tool Rename
+- **Renamed `__internal__apps_submit` to `__internal__submit_ui_response`** for clearer intent
+- Updated tool definition, variable names, comments, and documentation
