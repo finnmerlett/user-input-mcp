@@ -67,14 +67,20 @@ async function promptUser(prompt: string, title?: string): Promise<string> {
       reject(new Error(`Failed to launch dialog: ${err.message}`))
     })
 
-    // Timeout after 120 minutes
-    setTimeout(
-      () => {
-        child.kill()
-        reject(new Error('User input timeout after 120 minutes'))
-      },
-      120 * 60 * 1000,
-    )
+    // Optional timeout via environment variable
+    const envTimeout = process.env.USER_INPUT_TIMEOUT_MINUTES
+    if (envTimeout) {
+      const minutes = parseInt(envTimeout, 10)
+      if (!isNaN(minutes) && minutes > 0) {
+        setTimeout(
+          () => {
+            child.kill()
+            reject(new Error(`User input timeout after ${minutes} minutes`))
+          },
+          minutes * 60 * 1000,
+        )
+      }
+    }
   })
 }
 

@@ -23,8 +23,18 @@ interface PendingRequest {
 
 const pendingRequests = new Map<string, PendingRequest>()
 
-// Default timeout for awaiting response (120 minutes, matching documentation)
-const DEFAULT_TIMEOUT_MS = 120 * 60 * 1000
+// Optional timeout in milliseconds (no default - user can cancel via stop button)
+// Can be overridden via USER_INPUT_TIMEOUT_MINUTES environment variable
+const getTimeoutMs = (): number | undefined => {
+  const envTimeout = process.env.USER_INPUT_TIMEOUT_MINUTES
+  if (envTimeout) {
+    const minutes = parseInt(envTimeout, 10)
+    if (!isNaN(minutes) && minutes > 0) {
+      return minutes * 60 * 1000
+    }
+  }
+  return undefined // No timeout by default
+}
 
 /**
  * Store a response for a pending request.
@@ -61,7 +71,7 @@ export function storeResponse(requestId: string, response: string | undefined, c
  * Wait for a response from the UI.
  * Called by await_apps_response tool.
  */
-export function waitForResponse(requestId: string, timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<{ response?: string; cancelled?: boolean }> {
+export function waitForResponse(requestId: string, timeoutMs?: number): Promise<{ response?: string; cancelled?: boolean }> {
   return new Promise((resolve, reject) => {
     const pending = pendingRequests.get(requestId)
     
@@ -81,16 +91,18 @@ export function waitForResponse(requestId: string, timeoutMs: number = DEFAULT_T
       pending.resolvers.push(resolve)
     }
     
-    // Set timeout
-    setTimeout(() => {
-      const p = pendingRequests.get(requestId)
-      if (p && !p.resolved) {
-        // Remove this resolver and clean up the pending request to avoid leaks
-        p.resolvers = p.resolvers.filter((r) => r !== resolve)
-        pendingRequests.delete(requestId)
-        reject(new Error('Timeout waiting for user response'))
-      }
-    }, timeoutMs)
+    // Set timeout only if specified
+    if (timeoutMs && timeoutMs > 0) {
+      setTimeout(() => {
+        const p = pendingRequests.get(requestId)
+        if (p && !p.resolved) {
+          // Remove this resolver and clean up the pending request to avoid leaks
+          p.resolvers = p.resolvers.filter((r) => r !== resolve)
+          pendingRequests.delete(requestId)
+          reject(new Error('Timeout waiting for user response'))
+        }
+      }, timeoutMs)
+    }
   })
 }
 
@@ -284,17 +296,12 @@ export const AWAIT_APPS_RESPONSE_TOOL: ToolWithHandler = {
         type: 'string',
         description: 'The requestId returned by user_apps_input',
       },
-      timeout: {
-        type: 'number',
-        description: 'Optional timeout in milliseconds (default: 10 minutes)',
-      },
     },
     required: ['requestId'],
   },
   handler: async (args, _extra): Promise<ServerResult> => {
-    const { requestId, timeout } = args as {
+    const { requestId } = args as {
       requestId: string
-      timeout?: number
     }
 
     if (!requestId || typeof requestId !== 'string') {
@@ -302,7 +309,7 @@ export const AWAIT_APPS_RESPONSE_TOOL: ToolWithHandler = {
     }
 
     try {
-      const result = await waitForResponse(requestId, timeout ?? DEFAULT_TIMEOUT_MS)
+      const result = await waitForResponse(requestId, getTimeoutMs())
       
       // Clean up the pending request
       pendingRequests.delete(requestId)

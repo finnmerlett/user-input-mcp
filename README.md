@@ -7,9 +7,31 @@ A Model Context Protocol (MCP) server that provides tools for requesting input f
 - **Three input methods**: MCP Apps inline UI, GUI-based Electron dialogs, and MCP elicitation API
 - **MCP Apps integration**: Displays interactive HTML forms inline within chat interfaces (VS Code Insiders, Claude Desktop)
 - Built with TypeScript and the official MCP SDK
-- 120-minute timeout for GUI input, 10-minute timeout for elicitation
+- **No default timeout** - users can cancel via stop button; optional timeout via environment variable
 - Easy integration with any MCP client (Claude Desktop, VS Code, etc.)
 - Server instructions for autonomous agent integration
+
+## Configuration
+
+### Timeout Configuration
+
+By default, all user input tools have **no timeout** - the user can cancel at any time via the stop button. If you prefer to set a timeout, you can configure it via environment variable:
+
+```json
+{
+  "mcpServers": {
+    "user-input": {
+      "command": "node",
+      "args": ["/path/to/user-input-mcp/build/index.js"],
+      "env": {
+        "USER_INPUT_TIMEOUT_MINUTES": "60"
+      }
+    }
+  }
+}
+```
+
+The `USER_INPUT_TIMEOUT_MINUTES` environment variable sets the timeout in minutes for all user input tools.
 
 ## Installation
 
@@ -103,8 +125,7 @@ Waits for and retrieves the user's response from a `user_apps_input` call. This 
 
 - **Parameters**:
   - `requestId` (required): The `requestId` returned by `user_apps_input`
-  - `timeout` (optional): Timeout in milliseconds (default: 120 minutes)
-- **Behavior**: Blocks until the user submits their response or the timeout expires
+- **Behavior**: Blocks until the user submits their response or cancels
 
 **Example**:
 ```json
@@ -130,7 +151,7 @@ A GUI-based tool that opens an Electron dialog window to collect user input. Bes
 - **Parameters**:
   - `prompt` (required): The prompt to display to the user
   - `title` (optional): A title for the input dialog window
-- **Timeout**: 120 minutes
+- **Timeout**: No default timeout (configurable via `USER_INPUT_TIMEOUT_MINUTES` env var)
 
 **Example**:
 ```json
@@ -151,7 +172,7 @@ Uses the MCP elicitation API to request input directly through the client's nati
 
 - **Parameters**:
   - `prompt` (required): The prompt to display to the user
-- **Timeout**: 10 minutes
+- **Timeout**: No default timeout (configurable via `USER_INPUT_TIMEOUT_MINUTES` env var)
 - **Requires**: Client elicitation capability
 
 **Example**:

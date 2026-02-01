@@ -25,6 +25,14 @@ export const USER_ELICITATION_TOOL: ToolWithHandler = {
     }
 
     try {
+      // Get timeout from environment variable, or use undefined (no timeout)
+      const envTimeout = process.env.USER_INPUT_TIMEOUT_MINUTES
+      const timeoutMs = envTimeout ? parseInt(envTimeout, 10) * 60 * 1000 : undefined
+      
+      const requestOptions = timeoutMs && !isNaN(timeoutMs) && timeoutMs > 0
+        ? { timeout: timeoutMs }
+        : {}
+      
       const elicitationResult = await extra.sendRequest(
         {
           method: 'elicitation/create',
@@ -44,9 +52,7 @@ export const USER_ELICITATION_TOOL: ToolWithHandler = {
           },
         },
         ElicitResultSchema,
-        {
-          timeout: 10 * 60 * 1000, // 10 minutes
-        },
+        requestOptions,
       )
 
       switch (elicitationResult.action) {
