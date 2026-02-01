@@ -1,4 +1,4 @@
-# 001 - MCP Apps Input Tool
+# 001 - Inline UI User Input Tool
 
 ## Overview
 
@@ -14,7 +14,7 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
 
 ### Benefits over existing tools
 
-| Feature | `user_input` (Electron) | `user_elicitation` | `user_apps_input` (New) |
+| Feature | `user_input` (Electron) | `user_elicitation` | `inline_ui_user_input` (New) |
 |---------|------------------------|-------------------|------------------------|
 | Inline in chat | ❌ External window | ✅ Native UI | ✅ Custom HTML |
 | Custom styling | ❌ Limited | ❌ None | ✅ Full control |
@@ -72,14 +72,14 @@ The MCP Apps protocol (SEP-1865) enables MCP servers to deliver interactive HTML
               ↕
 ┌─────────────────────────────────────────────────────────────┐
 │ MCP Server (user-input-mcp)                                 │
-│  - user_apps_input tool                                     │
+│  - inline_ui_user_input tool                                │
 │  - ui://user-input/form.html resource                       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow
 
-1. **Tool Call**: Agent calls `user_apps_input` with `{ prompt, title?, options? }`
+1. **Tool Call**: Agent calls `inline_ui_user_input` with `{ prompt, title?, options? }`
 2. **UI Render**: Host fetches `ui://user-input/form.html` resource and renders iframe
 3. **Tool Input**: Host sends `ui/notifications/tool-input` with arguments to iframe
 4. **User Interaction**: 
@@ -184,8 +184,8 @@ This section documents additional work and changes made during implementation th
 
 #### Two-Tool Blocking Pattern (68edf65)
 - **Implemented new architecture using two tools instead of one**:
-  - `user_apps_input` - Renders the UI and returns immediately
-  - `await_apps_response` - Blocks waiting for user submission
+  - `inline_ui_user_input` - Renders the UI and returns immediately
+  - `await_inline_ui_response` - Blocks waiting for user submission
   - `__internal__apps_submit` - Internal tool for UI to submit results (hidden from agent)
 - This pattern was required because the MCP Apps protocol doesn't support direct tool result return from UI
 
@@ -210,3 +210,31 @@ This section documents additional work and changes made during implementation th
 #### Internal Tool Naming (0f97d6b)
 - Renamed `_apps_store_response` to `__internal__apps_submit` for clearer intent
 - Prefixed with `__internal__` to indicate it's not meant for agent use
+
+#### Default showInput Behavior (6f4f367)
+- Fixed the input box to not show by default when options are provided and `showInput` is false
+- Improved UX by only showing free text input when appropriate
+
+#### localStorage State Persistence (2acd7a0)
+- Implemented localStorage-based form completion state persistence
+- Prevents form from being re-displayed on page refresh after submission
+- Improves user experience in long-running conversations
+
+#### PR Review Improvements (32b0a65)
+- Added DOMPurify for XSS protection when rendering markdown prompts
+- Fixed useHostStyles hook to handle undefined hostContext
+- Improved documentation for await_apps_response tool
+- Fixed keyboard shortcut docs (Enter to submit, Shift+Enter for new lines)
+- Fixed memory leak on timeout (clean up pendingRequests map)
+- Hidden __internal__apps_submit from public tools list
+- Clarified vite emptyOutDir comment
+
+#### Timeout Configuration (b3cf056)
+- **Removed all default timeouts** - users can now cancel via stop button at any time
+- Added `USER_INPUT_TIMEOUT_MINUTES` environment variable for global timeout configuration
+- Removed timeout parameter from tool schemas (now only configurable globally)
+
+#### Tool Renaming (c150034)
+- **Renamed `user_apps_input` to `inline_ui_user_input`** for clearer intent
+- **Renamed `await_apps_response` to `await_inline_ui_response`**
+- Updated all documentation and variable names throughout codebase
