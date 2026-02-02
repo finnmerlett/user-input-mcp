@@ -9,7 +9,8 @@
   },
   "scripts": {
     "cleanup": "rm -rf build",
-    "build": "tsc",
+    "build": "tsc && npm run build:ui",
+    "build:ui": "mkdir -p build/ui && BUILD_ENTRY=input-form vite build",
     "postbuild": "cp lib/*.cjs build/ && cp -r src/docs build/docs",
     "watch": "tsc --watch",
     "start": "node build/index.js",
@@ -25,16 +26,26 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.0.1",
     "@modelcontextprotocol/sdk": "^1.25.2",
+    "dompurify": "^3.3.1",
     "electron": "^33.4.11",
-    "marked": "^17.0.1"
+    "marked": "^17.0.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@types/dompurify": "^3.2.0",
     "@types/node": "^22.19.6",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.53.0",
     "@typescript-eslint/parser": "^8.53.0",
+    "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^9.39.2",
     "prettier": "^3.7.4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-singlefile": "^2.3.0"
   }
 }
