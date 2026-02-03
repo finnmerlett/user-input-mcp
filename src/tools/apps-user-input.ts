@@ -28,13 +28,13 @@ const UserAppsInputSchema = z.object({
     .array(z.string())
     .optional()
     .describe(
-      'Optional array of quick-select button labels for common responses. An "Other..." button is automatically added.'
+      'Optional array of quick-select button labels for common responses. An "Something else..." button is automatically added.'
     ),
   showInput: z
     .boolean()
     .optional()
     .describe(
-      'Whether to show the free text input box initially. Defaults to true if no options provided, false if options are provided. Users can always click "Other..." to show the input.'
+      'Whether to show the free text input box initially. Defaults to true if no options provided, false if options are provided. Users can always click "Something else..." to show the input.'
     ),
 })
 
