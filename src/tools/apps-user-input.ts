@@ -43,14 +43,8 @@ const UserAppsInputSchema = z.object({
  */
 const AwaitAppsResponseSchema = z.object({
   requestId: z
-    .string()
     .uuid('Request ID must be a valid UUID')
     .describe('The requestId returned by user_apps_input'),
-  timeout: z
-    .number()
-    .positive('Timeout must be positive')
-    .optional()
-    .describe('Optional timeout in milliseconds (default: 10 minutes)'),
 })
 
 /**
