@@ -1,28 +1,26 @@
 import { ElicitResultSchema, type ServerResult } from '@modelcontextprotocol/sdk/types.js'
+import { z } from 'zod'
 
 import { ToolWithHandler } from './types.js'
+import { toJsonSchema } from './zod-utils.js'
+
+/**
+ * Schema for user_elicitation tool (MCP elicitation API)
+ */
+const UserElicitationSchema = z.object({
+  prompt: z
+    .string()
+    .min(1, 'Prompt must not be empty')
+    .describe('The prompt to display to the user'),
+})
 
 export const USER_ELICITATION_TOOL: ToolWithHandler = {
   name: 'user_elicitation',
   description: 'Request additional input from the user during generation',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      prompt: {
-        type: 'string',
-        description: 'The prompt to display to the user',
-      },
-    },
-    required: ['prompt'],
-  },
+  inputSchema: toJsonSchema(UserElicitationSchema),
   handler: async (args, extra): Promise<ServerResult> => {
-    const localArgs = args as {
-      prompt: string
-    }
-
-    if (!localArgs.prompt || typeof localArgs.prompt !== 'string') {
-      throw new Error('Missing required argument: prompt')
-    }
+    // Validate input with Zod
+    const localArgs = UserElicitationSchema.parse(args)
 
     try {
       // Get timeout from environment variable, or use undefined (no timeout)

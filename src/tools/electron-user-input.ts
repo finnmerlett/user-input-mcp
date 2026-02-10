@@ -3,13 +3,29 @@ import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
+import { z } from 'zod'
 
 import { ServerResult } from "@modelcontextprotocol/sdk/types.js";
 
 import type { ToolWithHandler } from "./types.js";
+import { toJsonSchema } from './zod-utils.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+/**
+ * Schema for user_input tool (Electron dialog-based input)
+ */
+const UserInputSchema = z.object({
+  prompt: z
+    .string()
+    .min(1, 'Prompt must not be empty')
+    .describe('The prompt to display to the user'),
+  title: z
+    .string()
+    .optional()
+    .describe('The title of the input dialog (optional)'),
+})
 
 /**
  * Show Electron dialog and get user input
@@ -87,29 +103,10 @@ async function promptUser(prompt: string, title?: string): Promise<string> {
 export const USER_INPUT_TOOL: ToolWithHandler = {
   name: 'user_input',
   description: 'Request additional input from the user during generation',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      prompt: {
-        type: 'string',
-        description: 'The prompt to display to the user',
-      },
-      title: {
-        type: 'string',
-        description: 'The title of the input dialog (optional)',
-      },
-    },
-    required: ['prompt'],
-  },
+  inputSchema: toJsonSchema(UserInputSchema),
   handler: async (args: unknown): Promise<ServerResult> => {
-    const localArgs = args as {
-      prompt: string
-      title?: string
-    }
-
-    if (!localArgs.prompt || typeof localArgs.prompt !== 'string') {
-      throw new Error('Missing required argument: prompt')
-    }
+    // Validate input with Zod
+    const localArgs = UserInputSchema.parse(args)
 
     try {
       const userInput = await promptUser(localArgs.prompt, localArgs.title)

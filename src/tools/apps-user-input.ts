@@ -4,11 +4,66 @@ import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import type { ServerResult } from '@modelcontextprotocol/sdk/types.js'
 import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server'
+import { z } from 'zod'
 
 import { ToolWithHandler } from './types.js'
+import { toJsonSchema } from './zod-utils.js'
 
 // Get the directory of the current module
 const __dirname = dirname(fileURLToPath(import.meta.url))
+
+/**
+ * Schema for user_apps_input tool (MCP Apps inline UI)
+ */
+const UserAppsInputSchema = z.object({
+  prompt: z
+    .string()
+    .min(1, 'Prompt must not be empty')
+    .describe('The question or prompt to display to the user'),
+  title: z
+    .string()
+    .optional()
+    .describe('Optional title for the input form'),
+  options: z
+    .array(z.string())
+    .optional()
+    .describe(
+      'Optional array of quick-select button labels for common responses. An "Something else..." button is automatically added.'
+    ),
+  showInput: z
+    .boolean()
+    .optional()
+    .describe(
+      'Whether to show the free text input box initially. Defaults to true if no options provided, false if options are provided. Users can always click "Something else..." to show the input.'
+    ),
+})
+
+/**
+ * Schema for await_apps_response tool
+ */
+const AwaitAppsResponseSchema = z.object({
+  requestId: z
+    .uuid('Request ID must be a valid UUID')
+    .describe('The requestId returned by user_apps_input'),
+})
+
+/**
+ * Schema for __internal__apps_submit tool
+ */
+const InternalAppsSubmitSchema = z.object({
+  requestId: z
+    .string()
+    .uuid('Request ID must be a valid UUID')
+    .describe('The unique request ID from the user_apps_input call'),
+  response: z
+    .string()
+    .optional()
+    .describe("The user's response text"),
+  cancelled: z
+    .boolean()
+    .optional()
+    .describe('Whether the user cancelled the input request'),
+})
 
 /**
  * In-memory storage for pending user responses.
@@ -122,20 +177,6 @@ function readInputFormHtml(): string {
 }
 
 /**
- * Input schema for the inline_ui_user_input tool
- */
-export interface InlineUiUserInputArgs {
-  /** The question or prompt to show to the user */
-  prompt: string
-  /** Optional title for the form */
-  title?: string
-  /** Optional array of quick-select button labels */
-  options?: string[]
-  /** Whether to show the free text input box (defaults to true if no options, false if options provided) */
-  showInput?: boolean
-}
-
-/**
  * MCP Apps-based user input tool.
  * Displays an interactive form UI for collecting user input.
  */
@@ -143,31 +184,7 @@ export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
   name: 'inline_ui_user_input',
   description:
     'Display an interactive form to collect user input during generation. Supports optional quick-select buttons for common responses. A "Something else..." button is always added when options are provided, allowing users to enter free text.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      prompt: {
-        type: 'string',
-        description: 'The question or prompt to display to the user',
-      },
-      title: {
-        type: 'string',
-        description: 'Optional title for the input form',
-      },
-      options: {
-        type: 'array',
-        items: {
-          type: 'string',
-        },
-        description: 'Optional array of quick-select button labels for common responses. A "Something else..." button is automatically added.',
-      },
-      showInput: {
-        type: 'boolean',
-        description: 'Whether to show the free text input box initially. Defaults to true if no options provided, false if options are provided. Users can always click "Something else..." to show the input.',
-      },
-    },
-    required: ['prompt'],
-  },
+  inputSchema: toJsonSchema(UserAppsInputSchema),
   // UI metadata for MCP Apps integration
   _meta: {
     ui: {
@@ -175,29 +192,8 @@ export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
     },
   },
   handler: async (args, _extra): Promise<ServerResult> => {
-    const localArgs = args as InlineUiUserInputArgs
-
-    if (!localArgs.prompt || typeof localArgs.prompt !== 'string') {
-      throw new Error('Missing required argument: prompt')
-    }
-
-    // Validate optional fields
-    if (localArgs.title !== undefined && typeof localArgs.title !== 'string') {
-      throw new Error('Invalid argument: title must be a string')
-    }
-
-    if (localArgs.options !== undefined) {
-      if (!Array.isArray(localArgs.options)) {
-        throw new Error('Invalid argument: options must be an array')
-      }
-      if (!localArgs.options.every((opt) => typeof opt === 'string')) {
-        throw new Error('Invalid argument: all options must be strings')
-      }
-    }
-
-    if (localArgs.showInput !== undefined && typeof localArgs.showInput !== 'boolean') {
-      throw new Error('Invalid argument: showInput must be a boolean')
-    }
+    // Validate input with Zod
+    const localArgs = UserAppsInputSchema.parse(args)
 
     // Generate a unique request ID for this input request
     const requestId = randomUUID()
@@ -237,36 +233,11 @@ export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
  */
 export const _SUBMIT_UI_RESPONSE_TOOL: ToolWithHandler = {
   name: '__internal__submit_ui_response',
-  description:
-    'Internal tool for MCP Apps UI to store user responses. Do not call directly.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      requestId: {
-        type: 'string',
-        description: 'The unique request ID from the inline_ui_user_input call',
-      },
-      response: {
-        type: 'string',
-        description: "The user's response text",
-      },
-      cancelled: {
-        type: 'boolean',
-        description: 'Whether the user cancelled the input request',
-      },
-    },
-    required: ['requestId'],
-  },
+  description: 'Internal tool for MCP Apps UI to store user responses. Do not call directly.',
+  inputSchema: toJsonSchema(InternalAppsSubmitSchema),
   handler: async (args, _extra): Promise<ServerResult> => {
-    const { requestId, response, cancelled } = args as {
-      requestId: string
-      response?: string
-      cancelled?: boolean
-    }
-
-    if (!requestId || typeof requestId !== 'string') {
-      throw new Error('Missing required argument: requestId')
-    }
+    // Validate input with Zod
+    const { requestId, response, cancelled } = InternalAppsSubmitSchema.parse(args)
 
     storeResponse(requestId, response, cancelled ?? false)
 
@@ -289,24 +260,10 @@ export const AWAIT_INLINE_UI_RESPONSE_TOOL: ToolWithHandler = {
   name: 'await_inline_ui_response',
   description:
     'Wait for and retrieve the user response from an inline_ui_user_input call. Call this after inline_ui_user_input to get the actual user input. This will block until the user submits their response.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      requestId: {
-        type: 'string',
-        description: 'The requestId returned by inline_ui_user_input',
-      },
-    },
-    required: ['requestId'],
-  },
+  inputSchema: toJsonSchema(AwaitAppsResponseSchema),
   handler: async (args, _extra): Promise<ServerResult> => {
-    const { requestId } = args as {
-      requestId: string
-    }
-
-    if (!requestId || typeof requestId !== 'string') {
-      throw new Error('Missing required argument: requestId')
-    }
+    // Validate input with Zod
+    const { requestId } = AwaitAppsResponseSchema.parse(args)
 
     try {
       const result = await waitForResponse(requestId, getTimeoutMs())
