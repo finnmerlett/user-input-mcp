@@ -5,22 +5,22 @@ import { ToolWithHandler } from './types.js'
 import { toJsonSchema } from './zod-utils.js'
 
 /**
- * Schema for user_elicitation tool (MCP elicitation API)
+ * Schema for user_input_elicitation tool (MCP elicitation API)
  */
-const UserElicitationSchema = z.object({
+const UserInputElicitationSchema = z.object({
   prompt: z
     .string()
     .min(1, 'Prompt must not be empty')
     .describe('The prompt to display to the user'),
 })
 
-export const USER_ELICITATION_TOOL: ToolWithHandler = {
-  name: 'user_elicitation',
-  description: 'Request additional input from the user during generation',
-  inputSchema: toJsonSchema(UserElicitationSchema),
+export const USER_INPUT_ELICITATION_TOOL: ToolWithHandler = {
+  name: 'user_input_elicitation',
+  description: 'Request additional input from the user via MCP elicitation API (client native UI)',
+  inputSchema: toJsonSchema(UserInputElicitationSchema),
   handler: async (args, extra): Promise<ServerResult> => {
     // Validate input with Zod
-    const localArgs = UserElicitationSchema.parse(args)
+    const localArgs = UserInputElicitationSchema.parse(args)
 
     try {
       // Get timeout from environment variable, or use undefined (no timeout)

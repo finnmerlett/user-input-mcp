@@ -89,7 +89,7 @@ The server provides three tools for requesting user input:
 
 ---
 
-#### `inline_ui_user_input` ⭐ Recommended
+#### `user_input_inline` ⭐ Recommended
 
 Displays an interactive HTML form inline within the chat interface using the MCP Apps protocol. Best for modern MCP clients that support MCP Apps (VS Code Insiders, Claude Desktop with MCP Apps support).
 
@@ -103,12 +103,12 @@ Displays an interactive HTML form inline within the chat interface using the MCP
   - Auto-expanding multiline textarea
   - Quick-select option buttons
   - Enter to submit, Shift+Enter for new lines
-- **Two-tool pattern**: This tool returns immediately with a `requestId`. You must then call `await_inline_ui_response` with that `requestId` to wait for and retrieve the user's actual input.
+- **Two-tool pattern**: This tool returns immediately with a `requestId`. You must then call `await_inline_response` with that `requestId` to wait for and retrieve the user's actual input.
 
 **Example**:
 ```json
 {
-  "name": "inline_ui_user_input",
+  "name": "user_input_inline",
   "arguments": {
     "prompt": "How would you like to proceed?",
     "title": "Next Steps",
@@ -119,20 +119,20 @@ Displays an interactive HTML form inline within the chat interface using the MCP
 
 ---
 
-#### `await_inline_ui_response`
+#### `await_inline_response`
 
-Waits for and retrieves the user's response from an `inline_ui_user_input` call. This tool must be called after `inline_ui_user_input` to get the actual user input.
+Waits for and retrieves the user's response from a `user_input_inline` call. This tool must be called after `user_input_inline` to get the actual user input.
 
 - **Parameters**:
-  - `requestId` (required): The `requestId` returned by `inline_ui_user_input`
+  - `requestId` (required): The `requestId` returned by `user_input_inline`
 - **Behavior**: Blocks until the user submits their response or cancels
 
 **Example**:
 ```json
 {
-  "name": "await_inline_ui_response",
+  "name": "await_inline_response",
   "arguments": {
-    "requestId": "uuid-from-inline_ui_user_input"
+    "requestId": "uuid-from-user_input_inline"
   }
 }
 ```
@@ -144,7 +144,7 @@ Waits for and retrieves the user's response from an `inline_ui_user_input` call.
 
 ---
 
-#### `user_input`
+#### `user_input_dialog`
 
 A GUI-based tool that opens an Electron dialog window to collect user input. Best for standalone MCP servers or clients without built-in elicitation support.
 
@@ -156,7 +156,7 @@ A GUI-based tool that opens an Electron dialog window to collect user input. Bes
 **Example**:
 ```json
 {
-  "name": "user_input",
+  "name": "user_input_dialog",
   "arguments": {
     "prompt": "What is your preferred color scheme?",
     "title": "Configuration"
@@ -166,7 +166,7 @@ A GUI-based tool that opens an Electron dialog window to collect user input. Bes
 
 ---
 
-#### `user_elicitation`
+#### `user_input_elicitation`
 
 Uses the MCP elicitation API to request input directly through the client's native interface. Best for clients that support elicitation (like VS Code with MCP extension).
 
@@ -178,7 +178,7 @@ Uses the MCP elicitation API to request input directly through the client's nati
 **Example**:
 ```json
 {
-  "name": "user_elicitation",
+  "name": "user_input_elicitation",
   "arguments": {
     "prompt": "Please describe the feature you want to implement"
   }
@@ -194,7 +194,7 @@ Uses the MCP elicitation API to request input directly through the client's nati
 
 ### Choosing Between Tools
 
-| Feature | `inline_ui_user_input` | `user_input` | `user_elicitation` |
+| Feature | `user_input_inline` | `user_input_dialog` | `user_input_elicitation` |
 |---------|------------------|--------------|-------------------|
 | Interface | Inline HTML in chat | Electron GUI dialog | Client's native UI |
 | Theme support | ✅ VS Code themes | ❌ No | ⚠️ Partial |
@@ -223,14 +223,14 @@ npm start
 
 ## How It Works
 
-### `user_input` (Electron Dialog)
+### `user_input_dialog` (Electron Dialog)
 
 1. The server launches an Electron dialog with the prompt
 2. The user enters their response in the dialog window
 3. The response is returned to the MCP client
 4. If no input is provided within 120 minutes, the request times out
 
-### `user_elicitation` (MCP Elicitation API)
+### `user_input_elicitation` (MCP Elicitation API)
 
 1. The server sends an elicitation request to the MCP client
 2. The client displays its native input UI (e.g., VS Code input box)

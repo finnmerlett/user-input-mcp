@@ -14,9 +14,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
- * Schema for user_input tool (Electron dialog-based input)
+ * Schema for user_input_dialog tool (Electron dialog-based input)
  */
-const UserInputSchema = z.object({
+const UserInputDialogSchema = z.object({
   prompt: z
     .string()
     .min(1, 'Prompt must not be empty')
@@ -100,13 +100,13 @@ async function promptUser(prompt: string, title?: string): Promise<string> {
   })
 }
 
-export const USER_INPUT_TOOL: ToolWithHandler = {
-  name: 'user_input',
-  description: 'Request additional input from the user during generation',
-  inputSchema: toJsonSchema(UserInputSchema),
+export const USER_INPUT_DIALOG_TOOL: ToolWithHandler = {
+  name: 'user_input_dialog',
+  description: 'Request additional input from the user during generation using an Electron dialog window',
+  inputSchema: toJsonSchema(UserInputDialogSchema),
   handler: async (args: unknown): Promise<ServerResult> => {
     // Validate input with Zod
-    const localArgs = UserInputSchema.parse(args)
+    const localArgs = UserInputDialogSchema.parse(args)
 
     try {
       const userInput = await promptUser(localArgs.prompt, localArgs.title)

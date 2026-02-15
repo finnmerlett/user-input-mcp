@@ -13,9 +13,9 @@ import { toJsonSchema } from './zod-utils.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
- * Schema for user_apps_input tool (MCP Apps inline UI)
+ * Schema for user_input_inline tool (MCP Apps inline UI)
  */
-const UserAppsInputSchema = z.object({
+const UserInputInlineSchema = z.object({
   prompt: z
     .string()
     .min(1, 'Prompt must not be empty')
@@ -39,22 +39,22 @@ const UserAppsInputSchema = z.object({
 })
 
 /**
- * Schema for await_apps_response tool
+ * Schema for await_inline_response tool
  */
-const AwaitAppsResponseSchema = z.object({
+const AwaitInlineResponseSchema = z.object({
   requestId: z
     .uuid('Request ID must be a valid UUID')
-    .describe('The requestId returned by user_apps_input'),
+    .describe('The requestId returned by user_input_inline'),
 })
 
 /**
- * Schema for __internal__apps_submit tool
+ * Schema for __internal__submit_inline_response tool
  */
-const InternalAppsSubmitSchema = z.object({
+const InternalInlineSubmitSchema = z.object({
   requestId: z
     .string()
     .uuid('Request ID must be a valid UUID')
-    .describe('The unique request ID from the user_apps_input call'),
+    .describe('The unique request ID from the user_input_inline call'),
   response: z
     .string()
     .optional()
@@ -180,11 +180,11 @@ function readInputFormHtml(): string {
  * MCP Apps-based user input tool.
  * Displays an interactive form UI for collecting user input.
  */
-export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
-  name: 'inline_ui_user_input',
+export const USER_INPUT_INLINE_TOOL: ToolWithHandler = {
+  name: 'user_input_inline',
   description:
-    'Display an interactive form to collect user input during generation. Supports optional quick-select buttons for common responses. A "Something else..." button is always added when options are provided, allowing users to enter free text.',
-  inputSchema: toJsonSchema(UserAppsInputSchema),
+    'Display an inline interactive form to collect user input during generation. Supports optional quick-select buttons for common responses. A "Something else..." button is always added when options are provided, allowing users to enter free text.',
+  inputSchema: toJsonSchema(UserInputInlineSchema),
   // UI metadata for MCP Apps integration
   _meta: {
     ui: {
@@ -193,7 +193,7 @@ export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
   },
   handler: async (args, _extra): Promise<ServerResult> => {
     // Validate input with Zod
-    const localArgs = UserAppsInputSchema.parse(args)
+    const localArgs = UserInputInlineSchema.parse(args)
 
     // Generate a unique request ID for this input request
     const requestId = randomUUID()
@@ -205,13 +205,13 @@ export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
     })
 
     // Return the parameters including requestId for the UI
-    // The UI will display the form and call __internal__submit_ui_response when user submits
-    // The agent should then call await_inline_ui_response(requestId) to get the response
+    // The UI will display the form and call __internal__submit_inline_response when user submits
+    // The agent should then call await_inline_response(requestId) to get the response
     return {
       content: [
         {
           type: 'text',
-          text: `Input form displayed. Call await_inline_ui_response with requestId: ${requestId} to get the user's response.`,
+          text: `Input form displayed. Call await_inline_response with requestId: ${requestId} to get the user's response.`,
         },
       ],
       structuredContent: {
@@ -229,15 +229,15 @@ export const INLINE_UI_USER_INPUT_TOOL: ToolWithHandler = {
 /**
  * Internal tool for the UI to store user responses.
  * Called by the MCP Apps UI when the user submits their input.
- * This stores the response in memory for await_inline_ui_response to retrieve.
+ * This stores the response in memory for await_inline_response to retrieve.
  */
-export const _SUBMIT_UI_RESPONSE_TOOL: ToolWithHandler = {
-  name: '__internal__submit_ui_response',
+export const _SUBMIT_INLINE_RESPONSE_TOOL: ToolWithHandler = {
+  name: '__internal__submit_inline_response',
   description: 'Internal tool for MCP Apps UI to store user responses. Do not call directly.',
-  inputSchema: toJsonSchema(InternalAppsSubmitSchema),
+  inputSchema: toJsonSchema(InternalInlineSubmitSchema),
   handler: async (args, _extra): Promise<ServerResult> => {
     // Validate input with Zod
-    const { requestId, response, cancelled } = InternalAppsSubmitSchema.parse(args)
+    const { requestId, response, cancelled } = InternalInlineSubmitSchema.parse(args)
 
     storeResponse(requestId, response, cancelled ?? false)
 
@@ -256,14 +256,14 @@ export const _SUBMIT_UI_RESPONSE_TOOL: ToolWithHandler = {
  * Tool for the agent to await user response.
  * This blocks until the user submits their input via the UI.
  */
-export const AWAIT_INLINE_UI_RESPONSE_TOOL: ToolWithHandler = {
-  name: 'await_inline_ui_response',
+export const AWAIT_INLINE_RESPONSE_TOOL: ToolWithHandler = {
+  name: 'await_inline_response',
   description:
-    'Wait for and retrieve the user response from an inline_ui_user_input call. Call this after inline_ui_user_input to get the actual user input. This will block until the user submits their response.',
-  inputSchema: toJsonSchema(AwaitAppsResponseSchema),
+    'Wait for and retrieve the user response from a user_input_inline call. Call this after user_input_inline to get the actual user input. This will block until the user submits their response.',
+  inputSchema: toJsonSchema(AwaitInlineResponseSchema),
   handler: async (args, _extra): Promise<ServerResult> => {
     // Validate input with Zod
-    const { requestId } = AwaitAppsResponseSchema.parse(args)
+    const { requestId } = AwaitInlineResponseSchema.parse(args)
 
     try {
       const result = await waitForResponse(requestId, getTimeoutMs())
