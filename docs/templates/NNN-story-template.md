@@ -92,8 +92,17 @@ Context, motivation, and any relevant history. Why is this feature needed?
 
 ### Extras added beyond original spec
 
-<!-- Example format:
-#### Feature/Change Name (commit-hash)
-- **What was added/changed** - Brief description
-- Any relevant implementation details
+*Record features, changes, or refinements that emerged during implementation but weren't in the original spec. Use a heading and short paragraph for each.*
+
+<!-- Example:
+#### Feature/Change Name
+Brief description of what was added or changed and why it was needed.
 -->
+
+### Development Log
+
+*Track implementation progress with dated entries summarizing what was done and which files were touched.*
+
+| Date | Summary | Files Changed |
+|---|---|---|
+<!-- | YYYY-MM-DD | Brief summary of work done | `file1.ts`, `file2.ts` | -->
