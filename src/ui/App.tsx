@@ -162,6 +162,7 @@ export default function App() {
     // Only open input section if preExpandTextInputBox is true or there are no options
     if (preExpandTextInputBox || !hasOptions) {
       setInputSectionOpen(true)
+      setInputSource('other')
     } else {
       setInputSectionOpen(false)
     }
