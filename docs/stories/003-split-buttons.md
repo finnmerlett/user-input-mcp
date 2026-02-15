@@ -149,7 +149,7 @@ From existing localStorage fields:
 - [x] Test option + text via edit pen → main semi-active, edit active
 - [x] Test free text via Other → Other button highlighted
 - [x] Test cancel → no highlights
-- [ ] Test page reload restores correct highlight state for all scenarios
+- [x] Test page reload restores correct highlight state for all scenarios
 - [x] Test keyboard navigation (focus outlines work cleanly)
 - [x] Test both wrap and list layouts
 - [x] Test numbered options trigger left-alignment in list layout
@@ -208,8 +208,26 @@ Uses `box-shadow: inset 0 0 0 2px` instead of `outline` on split button halves t
 #### State cleanup on all submit paths
 `inputSectionOpen` and `inputSource` are cleared before `submitResult` on option click, Submit button, and cancel. Prevents stale "Other" highlight when submitting via a main option after opening from Other.
 
+#### Edit pen semi-active on option-only selection
+When an option is selected without additional text, the edit pen zone shows a 50% semi-active background to visually tie it to the selected option.
+
+#### `showAdditionalFreeInputButton` (required boolean)
+Renamed from `showOtherButton`. Controls whether the built-in "Other..."/"Something else..." button appears. Agents must explicitly decide based on whether the provided options already cover free-text input. The description guides agents to only set `false` when a specified option already serves as the free-text prompt.
+
+#### `preExpandTextInputBox` (renamed from `showInput`)
+Optional boolean controlling whether the text input box is pre-expanded on load. When `true`, the free input button is always shown regardless of `showAdditionalFreeInputButton`.
+
+#### Agent instructions updated
+Server instructions (`src/docs/instructions.md`) updated to document the new fields, edit pen behaviour, and guidance on when to set `showAdditionalFreeInputButton` to `true` vs `false`.
+
+#### Numbered/lettered option guidance in tool description
+The `options` field description now recommends prefixing with numbers or letters for lists of 4+ items, explaining the UI will auto left-align these in list layout.
+
 ### Development Log
 
 | Date | Summary | Files Changed |
 |---|---|---|
 | 2025-02-15 | Full implementation of split buttons (phases 1-3) plus polish: focus artifact fix, semi-active state, per-option tracking, layout-dependent Other text, numbered left-alignment, state cleanup on all submit paths | `src/ui/App.tsx`, `src/ui/input-form.html` |
+| 2025-02-15 | Edit pen zone shows semi-active (50% bg) highlight on option-only selections | `src/ui/App.tsx` |
+| 2025-02-15 | Added `showAdditionalFreeInputButton` (required bool) and renamed `showInput` → `preExpandTextInputBox`. Updated tool schema, UI, and agent instructions | `src/tools/user-input-inline.ts`, `src/ui/App.tsx`, `src/docs/instructions.md` |
+| 2025-02-15 | Added numbered/lettered option guidance to `options` field description in tool schema | `src/tools/user-input-inline.ts` |
