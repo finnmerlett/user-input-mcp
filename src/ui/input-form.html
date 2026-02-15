@@ -105,6 +105,11 @@
       max-width: 550px;
     }
 
+    .options-container.layout-list .split-button .option-button {
+      width: auto;
+      max-width: none;
+    }
+
     .options-container .cancel-spacer {
       flex-grow: 1;
       min-width: 8px;
@@ -131,6 +136,93 @@
     .option-button.active {
       background: var(--vscode-button-background);
       color: var(--vscode-button-foreground);
+    }
+
+    .option-button.semi-active {
+      background: color-mix(in srgb, var(--vscode-button-background) 50%, transparent);
+      color: var(--vscode-button-foreground);
+    }
+
+    /* Split button wrapper */
+    .split-button {
+      display: inline-flex;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .split-button .split-main {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+      border-right: none;
+    }
+
+    .split-button .split-edit {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      border-left: 1px solid color-mix(in srgb, var(--vscode-button-background) 50%, transparent);
+      padding: 6px 7px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .split-button .split-edit.active,
+    .split-button .split-edit:hover {
+      border-left-color: var(--vscode-button-background);
+    }
+
+    .split-button .split-main.active + .split-edit:not(.active):not(:hover) {
+      border-left-color: transparent;
+    }
+
+    /* Focus outlines for split buttons — use inset box-shadow to avoid overlap between halves */
+    .split-button .option-button:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--vscode-focusBorder);
+    }
+
+    .split-button .split-edit svg {
+      display: block;
+    }
+
+    /* "Other" button — icon-only in inline, full-width with text in list */
+    .something-else-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 7px;
+    }
+
+    .something-else-btn svg {
+      display: block;
+    }
+
+    /* List layout: split buttons & Other fill width */
+    .options-container.layout-list .split-button {
+      width: 100%;
+      max-width: 550px;
+    }
+
+    .options-container.layout-list .something-else-btn {
+      width: 100%;
+      max-width: 550px;
+      padding: 6px 12px;
+      gap: 6px;
+    }
+
+    /* Left-align text in options when items have numbering/lettering */
+    .options-container.layout-list.left-align .split-main {
+      text-align: left;
+    }
+
+    .options-container.layout-list.left-align .something-else-btn {
+      text-align: left;
+      justify-content: flex-start;
+    }
+
+    .options-container.layout-list .split-main {
+      flex: 1;
+      text-align: center;
     }
 
     .option-button.cancel-btn {
