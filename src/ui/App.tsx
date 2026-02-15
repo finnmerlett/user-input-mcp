@@ -217,7 +217,7 @@ export default function App() {
     
     try {
       await app.callServerTool({
-        name: '__internal__submit_ui_response',
+        name: '__internal__submit_inline_response',
         arguments: {
           requestId,
           response: responseText,
