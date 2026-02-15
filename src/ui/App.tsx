@@ -311,7 +311,7 @@ export default function App() {
           {hasOptions && (
             <button
               type="button"
-              className={`option-button ${inputSectionOpen ? 'active' : ''}`}
+              className={`option-button ${inputSectionOpen || (submitted && !selectedOption && statusMessage && statusMessage !== 'Cancelled') ? 'active' : ''}`}
               onClick={toggleInputSection}
               disabled={submitted}
             >
