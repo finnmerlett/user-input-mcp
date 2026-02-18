@@ -152,10 +152,12 @@ export default function App() {
     return maxLen > 25 || allLabels.length > 4 || totalChars > 50
   })()
   
-  // Detect if options start with numbers or letters (e.g. "1.", "a)", "A.")
-  const useLeftAlign = useListLayout && hasOptions && filteredOptions!.every(
-    opt => /^[\da-zA-Z][.):\-]/.test(opt)
-  )
+  // Detect if at least two options start with numbers or letters (e.g. "1.", "a)", "A.")
+  const useLeftAlign = useListLayout && hasOptions && (() => {
+    const numberPrefixCount = filteredOptions!.filter(opt => /^\s*\d+[.):\-]\s*/.test(opt)).length
+    const letterPrefixCount = filteredOptions!.filter(opt => /^\s*[a-zA-Z][.):\-]\s*/.test(opt)).length
+    return numberPrefixCount >= 2 || letterPrefixCount >= 2
+  })()
   
   // Initialize input section state based on preExpandTextInputBox or hasOptions
   useEffect(() => {
