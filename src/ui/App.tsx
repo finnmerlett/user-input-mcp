@@ -13,11 +13,18 @@ import DOMPurify from 'dompurify'
 // Configure marked to treat line breaks as <br> (like the electron version)
 marked.use({ breaks: true })
 
+const EditIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 20H21M3.00003 20H4.67457C5.16376 20 5.40835 20 5.63852 19.9447C5.84259 19.8957 6.03768 19.8149 6.21663 19.7053C6.41846 19.5816 6.59141 19.4086 6.93732 19.0627L19.5001 6.49998C20.3285 5.67156 20.3285 4.32841 19.5001 3.49998C18.6716 2.67156 17.3285 2.67156 16.5001 3.49998L3.93729 16.0627C3.59139 16.4086 3.41843 16.5816 3.29475 16.7834C3.18509 16.9624 3.10428 17.1574 3.05529 17.3615C3.00003 17.5917 3.00003 17.8363 3.00003 18.3255V20Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+)
+
 interface FormArgs {
   prompt?: string
   title?: string
   options?: string[]
-  showInput?: boolean
+  showAdditionalFreeInputButton?: boolean
+  preExpandTextInputBox?: boolean
 }
 
 type SubmitAction = 'option' | 'submit' | 'cancel'
@@ -47,7 +54,8 @@ export default function App() {
             prompt?: string
             title?: string
             options?: string[]
-            showInput?: boolean
+            showAdditionalFreeInputButton?: boolean
+            preExpandTextInputBox?: boolean
           }
           if (sc.requestId) {
             setRequestId(sc.requestId)
@@ -57,7 +65,8 @@ export default function App() {
               prompt: sc.prompt,
               title: sc.title,
               options: sc.options,
-              showInput: sc.showInput,
+              showAdditionalFreeInputButton: sc.showAdditionalFreeInputButton,
+              preExpandTextInputBox: sc.preExpandTextInputBox,
             })
           }
         }
@@ -71,16 +80,18 @@ export default function App() {
   
   // Form state
   const [submitted, setSubmitted] = useState(false)
-  // Only open input section by default if showInput is true or no options
+  // Only open input section by default if preExpandTextInputBox is true or no options
   const [inputSectionOpen, setInputSectionOpen] = useState(() => {
     // Evaluate initial state based on formArgs (which may be empty at first)
-    if (formArgs.showInput) return true;
+    if (formArgs.preExpandTextInputBox) return true;
     if (formArgs.options && Array.isArray(formArgs.options) && formArgs.options.length > 0) return false;
     return true;
   });
   const [textValue, setTextValue] = useState('')
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  // Tracks how the input section was opened: option name (via that option's edit pen) or 'other' (via the Other button)
+  const [inputSource, setInputSource] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   
   // LocalStorage key prefix for persisting completed state
@@ -110,7 +121,7 @@ export default function App() {
     }
   }, [requestId])
   
-  const { prompt, title, options, showInput } = formArgs
+  const { prompt, title, options, showAdditionalFreeInputButton, preExpandTextInputBox } = formArgs
   
   // Filter out options that match "something else" pattern (we add our own)
   const filteredOptions = useMemo(() => {
@@ -130,6 +141,9 @@ export default function App() {
     return DOMPurify.sanitize(rawHtml)
   }, [prompt])
   
+  // Derive whether the submitted state included additional text (for highlight logic)
+  const submittedWithText = submitted && statusMessage !== null && statusMessage.includes('with text:')
+  
   // Determine if we should use list layout
   const useListLayout = hasOptions && (() => {
     const allLabels = [...filteredOptions!, 'Something else...']
@@ -138,15 +152,21 @@ export default function App() {
     return maxLen > 25 || allLabels.length > 4 || totalChars > 50
   })()
   
-  // Initialize input section state based on showInput or hasOptions
+  // Detect if options start with numbers or letters (e.g. "1.", "a)", "A.")
+  const useLeftAlign = useListLayout && hasOptions && filteredOptions!.every(
+    opt => /^[\da-zA-Z][.):\-]/.test(opt)
+  )
+  
+  // Initialize input section state based on preExpandTextInputBox or hasOptions
   useEffect(() => {
-    // Only open input section if showInput is true or there are no options
-    if (showInput || !hasOptions) {
+    // Only open input section if preExpandTextInputBox is true or there are no options
+    if (preExpandTextInputBox || !hasOptions) {
       setInputSectionOpen(true)
+      setInputSource('other')
     } else {
       setInputSectionOpen(false)
     }
-  }, [showInput, hasOptions])
+  }, [preExpandTextInputBox, hasOptions])
   
   // Focus textarea when input section opens
   useEffect(() => {
@@ -233,10 +253,8 @@ export default function App() {
   // Handle option click
   const handleOptionClick = (option: string) => {
     const freeText = inputSectionOpen ? textValue.trim() : undefined
-    // Close input section if no free text (so "Something else..." deselects)
-    if (!freeText) {
-      setInputSectionOpen(false)
-    }
+    setInputSectionOpen(false)
+    setInputSource(null)
     submitResult(option, 'option', freeText || undefined)
   }
   
@@ -247,12 +265,23 @@ export default function App() {
       textareaRef.current?.focus()
       return
     }
-    submitResult(value, 'submit', undefined)
+    // If text box was opened from an option's edit pen, submit as that option + text
+    if (inputSource && inputSource !== 'other') {
+      const option = inputSource
+      setInputSectionOpen(false)
+      setInputSource(null)
+      submitResult(option, 'option', value)
+    } else {
+      setInputSectionOpen(false)
+      setInputSource(null)
+      submitResult(value, 'submit', undefined)
+    }
   }
   
   // Handle cancel
   const handleCancel = () => {
     setInputSectionOpen(false)
+    setInputSource(null)
     submitResult(null, 'cancel', undefined)
   }
   
@@ -270,9 +299,26 @@ export default function App() {
     }
   }
   
-  // Toggle input section
-  const toggleInputSection = () => {
-    setInputSectionOpen(!inputSectionOpen)
+  // Toggle input section (from edit pen on a specific option)
+  const toggleInputFromEdit = (option: string) => {
+    if (inputSectionOpen && inputSource === option) {
+      setInputSectionOpen(false)
+      setInputSource(null)
+    } else {
+      setInputSectionOpen(true)
+      setInputSource(option)
+    }
+  }
+
+  // Toggle input section (from the Other button)
+  const toggleInputFromOther = () => {
+    if (inputSectionOpen && inputSource === 'other') {
+      setInputSectionOpen(false)
+      setInputSource(null)
+    } else {
+      setInputSectionOpen(true)
+      setInputSource('other')
+    }
   }
   
   // Loading state
@@ -295,27 +341,38 @@ export default function App() {
       
       {/* Options */}
       {(hasOptions || !submitted) && (
-        <div className={`options-container ${useListLayout ? 'layout-list' : ''}`}>
+        <div className={`options-container ${useListLayout ? 'layout-list' : ''} ${useLeftAlign ? 'left-align' : ''}`}>
           {hasOptions && filteredOptions!.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className={`option-button ${selectedOption === option ? 'active' : ''}`}
-              onClick={() => handleOptionClick(option)}
-              disabled={submitted}
-            >
-              {option}
-            </button>
+            <div key={option} className="split-button">
+              <button
+                type="button"
+                className={`split-main option-button ${selectedOption === option && !submittedWithText ? 'active' : ''} ${(inputSource === option && inputSectionOpen) || (selectedOption === option && submittedWithText) ? 'semi-active' : ''}`}
+                onClick={() => handleOptionClick(option)}
+                disabled={submitted}
+              >
+                {option}
+              </button>
+              <button
+                type="button"
+                className={`split-edit option-button ${(inputSource === option && inputSectionOpen) || (selectedOption === option && submittedWithText) ? 'active' : ''} ${selectedOption === option && !submittedWithText ? 'semi-active' : ''}`}
+                onClick={() => toggleInputFromEdit(option)}
+                disabled={submitted}
+                aria-label={`Add text to ${option}`}
+              >
+                <EditIcon />
+              </button>
+            </div>
           ))}
           
-          {hasOptions && (
+          {hasOptions && (showAdditionalFreeInputButton !== false || preExpandTextInputBox) && (
             <button
               type="button"
-              className={`option-button ${inputSectionOpen || (submitted && !selectedOption && statusMessage && statusMessage !== 'Cancelled') ? 'active' : ''}`}
-              onClick={toggleInputSection}
+              className={`option-button something-else-btn ${(inputSectionOpen && inputSource === 'other') || (submitted && !selectedOption && statusMessage && statusMessage !== 'Cancelled') ? 'active' : ''}`}
+              onClick={toggleInputFromOther}
               disabled={submitted}
+              aria-label="Something else"
             >
-              Something else...
+              {useListLayout && <>Something else...&nbsp;</>}{!useListLayout && <>Other...&nbsp;</>}<EditIcon />
             </button>
           )}
           
@@ -344,7 +401,7 @@ export default function App() {
               value={textValue}
               onChange={handleTextareaChange}
               onKeyDown={handleTextareaKeyDown}
-              placeholder="Type your response..."
+              placeholder={inputSource && inputSource !== 'other' ? 'Add additional details...' : 'Type your response...'}
               aria-label="Your response"
               rows={1}
             />
