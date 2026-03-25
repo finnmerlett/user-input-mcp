@@ -8,10 +8,14 @@ import { toJsonSchema } from './zod-utils.js'
  * Schema for user_input_elicitation tool (MCP elicitation API)
  */
 const UserInputElicitationSchema = z.object({
-  prompt: z
+  question: z
     .string()
-    .min(1, 'Prompt must not be empty')
-    .describe('The prompt to display to the user'),
+    .min(1, 'Question must not be empty')
+    .describe('The question to ask the user — shown as the input field label in the client UI. Make it specific and concise (e.g. `"Which database engine should the project use?"`)'),
+  introText: z
+    .string()
+    .optional()
+    .describe('Optional introductory text displayed above the input field to provide additional context or framing for the question.'),
 })
 
 export const USER_INPUT_ELICITATION_TOOL: ToolWithHandler = {
@@ -35,12 +39,12 @@ export const USER_INPUT_ELICITATION_TOOL: ToolWithHandler = {
         {
           method: 'elicitation/create',
           params: {
-            message: localArgs.prompt,
+            message: localArgs.introText ?? localArgs.question,
             requestedSchema: {
               type: 'object',
               properties: {
                 input: {
-                  title: 'String',
+                  title: localArgs.question,
                   type: 'string',
                   description: 'Type your answer',
                 },
