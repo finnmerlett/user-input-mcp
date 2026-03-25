@@ -8,19 +8,22 @@ import { toJsonSchema } from './zod-utils.js'
  * Schema for user_input_elicitation tool (MCP elicitation API)
  */
 const UserInputElicitationSchema = z.object({
-  question: z
-    .string()
-    .min(1, 'Question must not be empty')
-    .describe('The question to ask the user — shown as the input field label in the client UI. Make it specific and concise (e.g. `"Which database engine should the project use?"`)'),
+  question: z.string().min(1, 'Question must not be empty')
+    .describe(`Question shown as the input field label.
+      Write as a single direct question (e.g. "Which database engine should the project use?").
+      Put background context in introText, not here.`),
   introText: z
     .string()
     .optional()
-    .describe('Optional introductory text displayed above the input field to provide additional context or framing for the question.'),
+    .describe(
+      'Context shown above the input field. Provide only when the question is ambiguous without it.',
+    ),
 })
 
 export const USER_INPUT_ELICITATION_TOOL: ToolWithHandler = {
   name: 'user_input_elicitation',
-  description: 'Native client-side input (requires elicitation API capability)',
+  description:
+    'Ask the user a direct question via the MCP elicitation API and return their answer as plain text. Prefer this tool over user_input_dialog when the client supports elicitation.',
   inputSchema: toJsonSchema(UserInputElicitationSchema),
   handler: async (args, extra): Promise<ServerResult> => {
     // Validate input with Zod
@@ -30,11 +33,10 @@ export const USER_INPUT_ELICITATION_TOOL: ToolWithHandler = {
       // Get timeout from environment variable, or use undefined (no timeout)
       const envTimeout = process.env.USER_INPUT_TIMEOUT_MINUTES
       const timeoutMs = envTimeout ? parseInt(envTimeout, 10) * 60 * 1000 : undefined
-      
-      const requestOptions = timeoutMs && !isNaN(timeoutMs) && timeoutMs > 0
-        ? { timeout: timeoutMs }
-        : {}
-      
+
+      const requestOptions =
+        timeoutMs && !isNaN(timeoutMs) && timeoutMs > 0 ? { timeout: timeoutMs } : {}
+
       const elicitationResult = await extra.sendRequest(
         {
           method: 'elicitation/create',
