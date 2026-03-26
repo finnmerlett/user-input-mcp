@@ -138,7 +138,9 @@ export default function App() {
     // Unescape newlines that may have been double-escaped in JSON
     text = text.replace(/\\n/g, '\n')
     const rawHtml = marked.parse(text) as string
-    return DOMPurify.sanitize(rawHtml)
+    const cleanHtml = DOMPurify.sanitize(rawHtml)
+    // Add target="_blank" to all links so they open externally in VS Code/browsers
+    return cleanHtml.replace(/<a /gi, '<a target="_blank" rel="noopener noreferrer" ')
   }, [prompt])
   
   // Derive whether the submitted state included additional text (for highlight logic)
