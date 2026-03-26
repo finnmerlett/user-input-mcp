@@ -355,7 +355,27 @@ export default function App() {
   return (
     <div className={`form-container ${submitted ? 'disabled' : ''}`}>
       {title && <h2 className="title">{title}</h2>}
-      <div className="prompt" dangerouslySetInnerHTML={{ __html: promptHtmlSafe }} />
+      <div 
+        className="prompt" 
+        dangerouslySetInnerHTML={{ __html: promptHtmlSafe }} 
+        onClick={(e) => {
+          // Intercept link clicks to force external opening in environments like VS Code webviews
+          const target = e.target as HTMLElement
+          const anchor = target.closest('a')
+          if (anchor && anchor.href) {
+            e.preventDefault()
+            if (app) {
+              app.openLink({ url: anchor.href }).catch(err => {
+                console.error('[MCP] Failed to open link:', err)
+                // Fallback for standard browsers
+                window.open(anchor.href, '_blank', 'noopener,noreferrer')
+              })
+            } else {
+              window.open(anchor.href, '_blank', 'noopener,noreferrer')
+            }
+          }
+        }}
+      />
       
       {/* Options */}
       {(hasOptions || !submitted) && (
