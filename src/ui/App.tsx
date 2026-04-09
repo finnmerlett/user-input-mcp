@@ -138,7 +138,9 @@ export default function App() {
     // Unescape newlines that may have been double-escaped in JSON
     text = text.replace(/\\n/g, '\n')
     const rawHtml = marked.parse(text) as string
-    return DOMPurify.sanitize(rawHtml)
+    const cleanHtml = DOMPurify.sanitize(rawHtml)
+    // Add target="_blank" to all links so they open externally in VS Code/browsers
+    return cleanHtml.replace(/<a /gi, '<a target="_blank" rel="noopener noreferrer" ')
   }, [prompt])
   
   // Derive whether the submitted state included additional text (for highlight logic)
@@ -152,10 +154,24 @@ export default function App() {
     return maxLen > 25 || allLabels.length > 4 || totalChars > 50
   })()
   
-  // Detect if at least two options start with numbers or letters (e.g. "1.", "a)", "A.")
+  // Detect if at least two options start with numbers or letters (e.g. "1.", "1)", "1-", "[1]", "A.", "A)", "A-", "[A]")
   const useLeftAlign = useListLayout && hasOptions && (() => {
-    const numberPrefixCount = filteredOptions!.filter(opt => /^\s*\d+[.):\-]\s*/.test(opt)).length
-    const letterPrefixCount = filteredOptions!.filter(opt => /^\s*[a-zA-Z][.):\-]\s*/.test(opt)).length
+    const numberPrefixCount = filteredOptions!.filter(opt => {
+      // Check for standard numeric prefix: digit(s) followed by . ) or -
+      const isStandard = /^\s*\d+\s*[.):-]\s*/.test(opt)
+      // Check for bracketed numeric prefix: [ digit(s) ]
+      const isBracketed = /^\s*\[\s*\d+\s*\]\s*/.test(opt)
+      return isStandard || isBracketed
+    }).length
+
+    const letterPrefixCount = filteredOptions!.filter(opt => {
+      // Check for standard letter prefix: letter followed by . ) or -
+      const isStandard = /^\s*[a-zA-Z]\s*[.):-]\s*/.test(opt)
+      // Check for bracketed letter prefix: [ letter ]
+      const isBracketed = /^\s*\[\s*[a-zA-Z]\s*\]\s*/.test(opt)
+      return isStandard || isBracketed
+    }).length
+
     return numberPrefixCount >= 2 || letterPrefixCount >= 2
   })()
   
@@ -339,7 +355,27 @@ export default function App() {
   return (
     <div className={`form-container ${submitted ? 'disabled' : ''}`}>
       {title && <h2 className="title">{title}</h2>}
-      <div className="prompt" dangerouslySetInnerHTML={{ __html: promptHtmlSafe }} />
+      <div 
+        className="prompt" 
+        dangerouslySetInnerHTML={{ __html: promptHtmlSafe }} 
+        onClick={(e) => {
+          // Intercept link clicks to force external opening in environments like VS Code webviews
+          const target = e.target as HTMLElement
+          const anchor = target.closest('a')
+          if (anchor && anchor.href) {
+            e.preventDefault()
+            if (app) {
+              app.openLink({ url: anchor.href }).catch(err => {
+                console.error('[MCP] Failed to open link:', err)
+                // Fallback for standard browsers
+                window.open(anchor.href, '_blank', 'noopener,noreferrer')
+              })
+            } else {
+              window.open(anchor.href, '_blank', 'noopener,noreferrer')
+            }
+          }
+        }}
+      />
       
       {/* Options */}
       {(hasOptions || !submitted) && (

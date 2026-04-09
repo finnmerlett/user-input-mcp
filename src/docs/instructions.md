@@ -23,7 +23,7 @@ Uses the MCP Apps protocol to display a rich UI for user input in clients that s
 - **`showAdditionalFreeInputButton`** (required): Controls whether a built-in "Other..." / "Something else..." button is shown for pure free-text entry, in addition to the specified options. Set to `true` if the provided options don't fully cover what the user might want to say. Only set to `false` if one of the specified options already serves as a free-text or open-ended input prompt.
 - **`preExpandTextInputBox`** (optional): If true, the text input box is shown expanded when the form loads. Defaults to true if no options are provided, false otherwise. When true, the free input button is always shown regardless of `showAdditionalFreeInputButton`.
 - **Note**: Do NOT include your own "Something else", "Other", or similar variant in the options array — the "Other" button is controlled by `showAdditionalFreeInputButton`.
-- **Two-tool pattern**: After calling this tool, you must call `await_inline_response` with the returned `requestId` to get the user's response.
+- **Two-tool pattern**: After calling this tool, you MUST call `await_inline_response` with the returned `requestId` to get the user's response.
 
 ### `await_inline_response`
 Waits for and retrieves the user's response from a `user_input_inline` call.

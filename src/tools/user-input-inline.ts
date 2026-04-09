@@ -216,7 +216,7 @@ export const USER_INPUT_INLINE_TOOL: ToolWithHandler = {
       content: [
         {
           type: 'text',
-          text: `Input form displayed. Call await_inline_response with requestId: ${requestId} to get the user's response.`,
+          text: `Non-blocking input form displayed. IMPORTANT: you MUST call the user-input mcp tool await_inline_response with requestId: ${requestId} to get the user's response.`,
         },
       ],
       structuredContent: {
