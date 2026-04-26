@@ -25,18 +25,18 @@ const UserInputInlineSchema = z.object({
     .array(z.string())
     .optional()
     .describe(
-      'Optional array of quick-select button labels for common responses. Each option displays an edit pen icon that lets the user combine that option with additional free text. For lists of 4+ specific items, prefix options with numbers (e.g. "1. First item", "2. Second item") or letters (e.g. "a) First item") for better readability — the UI will automatically left-align these in list layout.',
+      'Optional array of quick-select button labels. Each button has an edit icon letting users add additional info. For 3/4+ items, prefix options with numbers or letters to auto-left-align in a nice list.',
     ),
   showAdditionalFreeInputButton: z
     .boolean()
     .describe(
-      'Whether to show a built-in "Other..." / "Something else..." button for pure free-text entry, in addition to the specified options. Set to true if the provided options do not fully cover what the user might want to say. Only set to false if one of the specified options already serves as a free-text or open-ended input prompt. Required.',
+      'Whether to show a dedicated "Other..." free-text button alongside the options. Set true if options don\'t fully cover possible responses.',
     ),
   preExpandTextInputBox: z
     .boolean()
     .optional()
     .describe(
-      'Whether to show the free text input box already expanded when the form loads. Defaults to true if no options provided, false if options are provided. If true, the free input button is always shown regardless of showAdditionalFreeInputButton.',
+      'If true, pre-selects the "Other..." free-text option so the UI loads with the input box open. Use when options are useful but secondary to free text input. Defaults to false.',
     ),
 })
 
@@ -186,7 +186,7 @@ function readInputFormHtml(): string {
 export const USER_INPUT_INLINE_TOOL: ToolWithHandler = {
   name: 'user_input_inline',
   description:
-    'Display an inline interactive form to collect user input during generation. Supports optional quick-select buttons with edit pen icons for combining options with additional text. Use showAdditionalFreeInputButton to control whether an "Other..." free-text button is shown.',
+    'Display an inline interactive form to collect user input. Parameters: prompt (required), title (optional), options (optional string array of quick-select buttons), showAdditionalFreeInputButton (required bool — show an "Other..." free-text button), preExpandTextInputBox (optional bool, defaults false — pre-select "Other..." and expand the free-text input). After calling, you MUST call await_inline_response with the returned requestId.',
   inputSchema: toJsonSchema(UserInputInlineSchema),
   // UI metadata for MCP Apps integration
   _meta: {
