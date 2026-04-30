@@ -13,19 +13,22 @@ import { toJsonSchema } from './zod-utils.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
- * Schema for user_input_inline tool (MCP Apps inline UI)
+ * Schema for user_input_inline__present_ui tool (MCP Apps inline UI)
  */
 const UserInputInlineSchema = z.object({
   prompt: z
     .string()
     .min(1, 'Prompt must not be empty')
     .describe('The question or prompt to display to the user'),
-  title: z.string().optional().describe('Optional title for the input form'),
+  title: z
+    .string()
+    .nullable()
+    .describe('Title for the input form, or null for no title'),
   options: z
     .array(z.string())
-    .optional()
+    .nullable()
     .describe(
-      'Optional array of quick-select button labels. Each button has an edit icon letting users add additional info. For 3/4+ items, prefix options with numbers or letters to auto-left-align in a nice list.',
+      'Array of quick-select button labels, or null if the UI should be free-text only. Each button has an edit icon letting users add additional info. For 3/4+ items, prefix options with numbers or letters to auto-left-align in a nice list.',
     ),
   showAdditionalFreeInputButton: z
     .boolean()
@@ -34,29 +37,28 @@ const UserInputInlineSchema = z.object({
     ),
   preExpandTextInputBox: z
     .boolean()
-    .optional()
     .describe(
-      'If true, pre-selects the "Other..." free-text option so the UI loads with the input box open. Use when options are useful but secondary to free text input. Defaults to false.',
+      'If true, pre-selects the "Other..." free-text option so the UI loads with the input box open. Use when options are useful but secondary to free text input. Set false otherwise.',
     ),
 })
 
 /**
- * Schema for await_inline_response tool
+ * Schema for user_input_inline__await_presented_ui tool
  */
 const AwaitInlineResponseSchema = z.object({
   requestId: z
     .uuid('Request ID must be a valid UUID')
-    .describe('The requestId returned by user_input_inline'),
+    .describe('The requestId returned by user_input_inline__present_ui'),
 })
 
 /**
- * Schema for __internal__submit_inline_response tool
+ * Schema for __internal_do_not_use__submit_inline tool
  */
 const InternalInlineSubmitSchema = z.object({
   requestId: z
     .string()
     .uuid('Request ID must be a valid UUID')
-    .describe('The unique request ID from the user_input_inline call'),
+    .describe('The unique request ID from the user_input_inline__present_ui call'),
   response: z.string().optional().describe("The user's response text"),
   cancelled: z.boolean().optional().describe('Whether the user cancelled the input request'),
 })
@@ -184,9 +186,9 @@ function readInputFormHtml(): string {
  * Displays an interactive form UI for collecting user input.
  */
 export const USER_INPUT_INLINE_TOOL: ToolWithHandler = {
-  name: 'user_input_inline',
+  name: 'user_input_inline__present_ui',
   description:
-    'Display an inline interactive form to collect user input. Parameters: prompt (required), title (optional), options (optional string array of quick-select buttons), showAdditionalFreeInputButton (required bool — show an "Other..." free-text button), preExpandTextInputBox (optional bool, defaults false — pre-select "Other..." and expand the free-text input). After calling, you MUST call await_inline_response with the returned requestId.',
+    'Display an inline interactive form to collect user input. Required parameters: prompt (string), title (string or null), options (string array or null for free-text only), showAdditionalFreeInputButton (bool — show an "Other..." free-text button), preExpandTextInputBox (bool — pre-select "Other..." and expand the free-text input). After calling, you MUST call user_input_inline__await_presented_ui with the returned requestId.',
   inputSchema: toJsonSchema(UserInputInlineSchema),
   // UI metadata for MCP Apps integration
   _meta: {
@@ -208,17 +210,17 @@ export const USER_INPUT_INLINE_TOOL: ToolWithHandler = {
     })
 
     // Return the parameters including requestId for the UI
-    // The UI will display the form and call __internal__submit_inline_response when user submits
-    // The agent should then call await_inline_response(requestId) to get the response
+    // The UI will display the form and call __internal_do_not_use__submit_inline when user submits
+    // The agent should then call user_input_inline__await_presented_ui(requestId) to get the response
     return {
       content: [
         {
           type: 'text',
-          text: `Input UI displayed. IMPORTANT: you MUST NOW call the user-input mcp tool await_inline_response IMMEDIATELY with requestId: ${requestId}. DO NOT SKIP THIS STEP.`,
+          text: `Input UI displayed. IMPORTANT: you MUST NOW call the user-input mcp tool user_input_inline__await_presented_ui IMMEDIATELY with requestId: ${requestId}. DO NOT SKIP THIS STEP.`,
         },
       ],
       structuredContent: {
-        agentInstruction: `Input UI displayed. IMPORTANT: you MUST NOW call the user-input mcp tool await_inline_response IMMEDIATELY with requestId: ${requestId}. DO NOT SKIP THIS STEP.`,
+        agentInstruction: `Input UI displayed. IMPORTANT: you MUST NOW call the user-input mcp tool user_input_inline__await_presented_ui IMMEDIATELY with requestId: ${requestId}. DO NOT SKIP THIS STEP.`,
         requestId,
         prompt: localArgs.prompt,
         title: localArgs.title,
@@ -234,10 +236,10 @@ export const USER_INPUT_INLINE_TOOL: ToolWithHandler = {
 /**
  * Internal tool for the UI to store user responses.
  * Called by the MCP Apps UI when the user submits their input.
- * This stores the response in memory for await_inline_response to retrieve.
+ * This stores the response in memory for user_input_inline__await_presented_ui to retrieve.
  */
 export const _SUBMIT_INLINE_RESPONSE_TOOL: ToolWithHandler = {
-  name: '__internal__submit_inline_response',
+  name: '__internal_do_not_use__submit_inline',
   description: 'Internal tool for MCP Apps UI to store user responses. Do not call directly.',
   inputSchema: toJsonSchema(InternalInlineSubmitSchema),
   handler: async (args, _extra): Promise<ServerResult> => {
@@ -262,9 +264,9 @@ export const _SUBMIT_INLINE_RESPONSE_TOOL: ToolWithHandler = {
  * This blocks until the user submits their input via the UI.
  */
 export const AWAIT_INLINE_RESPONSE_TOOL: ToolWithHandler = {
-  name: 'await_inline_response',
+  name: 'user_input_inline__await_presented_ui',
   description:
-    'Wait for and retrieve the user response from a user_input_inline call. Call this after user_input_inline to get the actual user input. This will block until the user submits their response.',
+    'Wait for and retrieve the user response from a user_input_inline__present_ui call. Call this after user_input_inline__present_ui to get the actual user input. This will block until the user submits their response.',
   inputSchema: toJsonSchema(AwaitInlineResponseSchema),
   handler: async (args, _extra): Promise<ServerResult> => {
     // Validate input with Zod

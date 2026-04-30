@@ -6,9 +6,9 @@ import type { ToolWithHandler } from "./types.js";
 export const TOOL_NAME = {
   USER_INPUT_DIALOG: 'user_input_dialog',
   USER_INPUT_ELICITATION: 'user_input_elicitation',
-  USER_INPUT_INLINE: 'user_input_inline',
-  AWAIT_INLINE_RESPONSE: 'await_inline_response',
-  _SUBMIT_INLINE_RESPONSE: '__internal__submit_inline_response',
+  USER_INPUT_INLINE: 'user_input_inline__present_ui',
+  AWAIT_INLINE_RESPONSE: 'user_input_inline__await_presented_ui',
+  _SUBMIT_INLINE_RESPONSE: '__internal_do_not_use__submit_inline',
 } as const;
 
 type ToolName = typeof TOOL_NAME[keyof typeof TOOL_NAME];
