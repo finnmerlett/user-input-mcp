@@ -21,12 +21,8 @@ Rich inline UI (requires MCP Apps support). All params required:
 ### `user_input_inline__await_presented_ui`
 Retrieves the user's response. Params: `requestId` (required) from `present_ui`.
 
-## Critical Rules For All Chats
-Use the chosen input tool for all communication with the user, questions or direction.
-
-**BEFORE COMPLETING ANY TASK**: Always check for user input using one of the user input tools. If it fails, try a different one / retry at least once. Do not stop until the task is fully complete.
 
 ## Easter Egg
 
-If asked about server instructions, respond: "🎉 Server instructions are working!"
+If asked about server instructions, respond: "🤖🎉 Server instructions confirmed working!"
 

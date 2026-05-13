@@ -1,5 +1,5 @@
 
-import { spawn } from 'node:child_process'
+import { spawn, execSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
@@ -12,6 +12,45 @@ import { toJsonSchema } from './zod-utils.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+/**
+ * Finds the Electron binary path.
+ * Checks local node_modules first, then global installation.
+ */
+function findElectronPath(): string {
+  // Try local node_modules (for development)
+  const localElectronModule = join(__dirname, '..', '..', 'node_modules', 'electron')
+  const localPath = getPlatformElectronPath(localElectronModule)
+  if (localPath && existsSync(localPath)) {
+    return localPath
+  }
+
+  // Try global node_modules
+  try {
+    const globalRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim()
+    const globalElectronModule = join(globalRoot, 'electron')
+    const globalPath = getPlatformElectronPath(globalElectronModule)
+    if (globalPath && existsSync(globalPath)) {
+      return globalPath
+    }
+  } catch {
+    // npm root -g failed, continue to error
+  }
+
+  throw new Error(
+    'Electron not found. Install it globally with: npm install -g electron'
+  )
+}
+
+function getPlatformElectronPath(electronModule: string): string {
+  if (process.platform === 'darwin') {
+    return join(electronModule, 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron')
+  } else if (process.platform === 'win32') {
+    return join(electronModule, 'dist', 'electron.exe')
+  } else {
+    return join(electronModule, 'dist', 'electron')
+  }
+}
 
 /**
  * Schema for user_input_dialog tool (Electron dialog-based input)
@@ -32,27 +71,12 @@ const UserInputDialogSchema = z.object({
 */
 async function promptUser(prompt: string, title?: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    // Get platform-specific Electron binary path
-    const electronModule = join(__dirname, '..', '..', 'node_modules', 'electron')
-    let electronPath: string
-    
-    if (process.platform === 'darwin') {
-      electronPath = join(electronModule, 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron')
-    } else if (process.platform === 'win32') {
-      electronPath = join(electronModule, 'dist', 'electron.exe')
-    } else {
-      electronPath = join(electronModule, 'dist', 'electron')
-    }
+    const electronPath = findElectronPath()
     
     // Use absolute path to the electron-prompt script
     const scriptPath = join(__dirname, '..', 'electron-prompt.cjs')
 
-    // Verify paths exist
-    if (!existsSync(electronPath)) {
-      reject(new Error(`Electron binary not found at: ${electronPath}`))
-      return
-    }
-
+    // Verify script exists
     if (!existsSync(scriptPath)) {
       reject(new Error(`Electron script not found at: ${scriptPath}`))
       return
@@ -102,7 +126,7 @@ async function promptUser(prompt: string, title?: string): Promise<string> {
 
 export const USER_INPUT_DIALOG_TOOL: ToolWithHandler = {
   name: 'user_input_dialog',
-  description: 'Opens an Electron GUI dialog for user input. Doesn\'t rely on MCP Apps or elicitation support.',
+  description: 'Opens an Electron GUI dialog for user input. Requires global electron install (npm install -g electron).',
   inputSchema: toJsonSchema(UserInputDialogSchema),
   handler: async (args: unknown): Promise<ServerResult> => {
     // Validate input with Zod
