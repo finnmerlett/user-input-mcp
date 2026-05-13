@@ -6,7 +6,7 @@
 Opens an Electron GUI dialog. Params: `prompt` (required), `title` (optional). Electron binary auto-downloads on first use (~150MB). Doesn't rely on MCP Apps or elicitation support.
 
 ### `user_input_elicitation`
-Native client-side input (requires elicitation API capability). Params: `prompt` (required).
+Native client-side input (requires elicitation API capability). Params: `question` (required), `introText` (optional). When the question alone is ambiguous, supply `introText` with the minimum context needed to answer correctly.
 
 ### `user_input_inline__present_ui`
 _(Preferred input method in VSCode Github Copilot Chat)_
