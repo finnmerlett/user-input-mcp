@@ -102,7 +102,7 @@ async function promptUser(prompt: string, title?: string): Promise<string> {
 
 export const USER_INPUT_DIALOG_TOOL: ToolWithHandler = {
   name: 'user_input_dialog',
-  description: 'Request additional input from the user during generation using an Electron dialog window',
+  description: 'Opens an Electron GUI dialog for user input. Doesn\'t rely on MCP Apps or elicitation support.',
   inputSchema: toJsonSchema(UserInputDialogSchema),
   handler: async (args: unknown): Promise<ServerResult> => {
     // Validate input with Zod

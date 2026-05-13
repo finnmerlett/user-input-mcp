@@ -28,17 +28,12 @@ const UserInputInlineSchema = z.object({
     .array(z.string())
     .nullable()
     .describe(
-      'Array of quick-select button labels, or null if the UI should be free-text only. Each button has an edit icon letting users add additional info. For 3/4+ items, prefix options with numbers or letters to auto-left-align in a nice list.',
+      'String array of choices, or null for free-text only. User can also add custom free text to any choice. For 3/4+ items, prefix options with numbers or letters to auto-left-align.',
     ),
   showAdditionalFreeInputButton: z
     .boolean()
     .describe(
-      'Whether to show a dedicated "Other..." free-text button alongside the options. Set true if options don\'t fully cover possible responses.',
-    ),
-  preExpandTextInputBox: z
-    .boolean()
-    .describe(
-      'If true, pre-selects the "Other..." free-text option so the UI loads with the input box open. Use when options are useful but secondary to free text input. Set false otherwise.',
+      'Show an extra "Other..." option for pure free-text entry. Set true rather than adding your own "Other"-style item in options.',
     ),
 })
 
@@ -188,7 +183,7 @@ function readInputFormHtml(): string {
 export const USER_INPUT_INLINE_TOOL: ToolWithHandler = {
   name: 'user_input_inline__present_ui',
   description:
-    'Display an inline interactive form to collect user input. Required parameters: prompt (string), title (string or null), options (string array or null for free-text only), showAdditionalFreeInputButton (bool — show an "Other..." free-text button), preExpandTextInputBox (bool — pre-select "Other..." and expand the free-text input). After calling, you MUST call user_input_inline__await_presented_ui with the returned requestId.',
+    'Display an inline interactive form to collect user input via rich inline UI (requires MCP Apps support). All params required: prompt (string), title (string or null), options (string array of choices or null for free-text only), showAdditionalFreeInputButton (bool — show an extra "Other..." option for pure free-text entry). After calling, you MUST call user_input_inline__await_presented_ui with the returned requestId.',
   inputSchema: toJsonSchema(UserInputInlineSchema),
   // UI metadata for MCP Apps integration
   _meta: {
@@ -226,7 +221,6 @@ export const USER_INPUT_INLINE_TOOL: ToolWithHandler = {
         title: localArgs.title,
         options: localArgs.options,
         showAdditionalFreeInputButton: localArgs.showAdditionalFreeInputButton,
-        preExpandTextInputBox: localArgs.preExpandTextInputBox,
         status: 'pending',
       },
     }
@@ -266,7 +260,7 @@ export const _SUBMIT_INLINE_RESPONSE_TOOL: ToolWithHandler = {
 export const AWAIT_INLINE_RESPONSE_TOOL: ToolWithHandler = {
   name: 'user_input_inline__await_presented_ui',
   description:
-    'Wait for and retrieve the user response from a user_input_inline__present_ui call. Call this after user_input_inline__present_ui to get the actual user input. This will block until the user submits their response.',
+    'Retrieves the user\'s response from a user_input_inline__present_ui call. Params: requestId (required). Blocks until the user submits.',
   inputSchema: toJsonSchema(AwaitInlineResponseSchema),
   handler: async (args, _extra): Promise<ServerResult> => {
     // Validate input with Zod

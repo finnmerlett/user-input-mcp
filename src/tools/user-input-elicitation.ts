@@ -16,7 +16,7 @@ const UserInputElicitationSchema = z.object({
 
 export const USER_INPUT_ELICITATION_TOOL: ToolWithHandler = {
   name: 'user_input_elicitation',
-  description: 'Request additional input from the user via MCP elicitation API (client native UI)',
+  description: 'Native client-side input (requires elicitation API capability)',
   inputSchema: toJsonSchema(UserInputElicitationSchema),
   handler: async (args, extra): Promise<ServerResult> => {
     // Validate input with Zod
