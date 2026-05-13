@@ -1,12 +1,8 @@
 {
   "servers": {
-    "usrin-local": {
+    "user-input-local": {
       "command": "node",
       "args": ["${workspaceFolder}/build/index.js"]
-    },
-    "usrin-pkg": {
-      "command": "npx",
-      "args": ["-y", "user-input-mcp"]
     }
   }
 }
