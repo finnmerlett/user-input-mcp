@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
@@ -22,6 +25,11 @@ import { readInstructions } from './utils/instructions.js'
 // This happens because the MCP SDK's stdio transport adds drain listeners for each write
 process.stdout.setMaxListeners(50)
 process.stdin.setMaxListeners(50)
+
+// Read version from package.json
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'))
 
 /**
  * Create and run the MCP server
@@ -46,7 +54,7 @@ async function main() {
   const { server } = new McpServer(
     {
       name: 'user-input-mcp',
-      version: '1.0.0',
+      version: pkg.version,
     },
     {
       capabilities: {
