@@ -5,11 +5,11 @@
   "type": "module",
   "main": "./build/index.js",
   "bin": {
-    "user-input-mcp": "./build/index.js"
+    "user-input-mcp": "build/index.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/finnmerlett/user-input-mcp.git"
+    "url": "git+https://github.com/finnmerlett/user-input-mcp.git"
   },
   "homepage": "https://github.com/finnmerlett/user-input-mcp",
   "files": [
