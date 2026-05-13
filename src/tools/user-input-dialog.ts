@@ -38,7 +38,7 @@ function findElectronPath(): string {
   }
 
   throw new Error(
-    'Electron not found. Install it globally with: npm install -g electron'
+    'Electron not found. Ask the user if they want to install it globally by running: npm install -g electron'
   )
 }
 
