@@ -1,12 +1,23 @@
 {
   "name": "user-input-mcp",
   "version": "1.0.0",
-  "description": "MCP server for user input using Electron dialog",
+  "description": "MCP server that lets AI agents ask users questions mid-task via inline chat UI, Electron dialogs, or MCP elicitation",
   "type": "module",
   "main": "./build/index.js",
   "bin": {
     "user-input-mcp": "./build/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/finnmerlett/user-input-mcp.git"
+  },
+  "homepage": "https://github.com/finnmerlett/user-input-mcp",
+  "files": [
+    "build/",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "cleanup": "rm -rf build",
     "build": "tsc && npm run build:ui",
@@ -20,10 +31,11 @@
     "mcp",
     "model-context-protocol",
     "user-input",
-    "electron",
-    "dialog"
+    "mcp-apps",
+    "copilot",
+    "ai-agent"
   ],
-  "author": "",
+  "author": "finnmerlett",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.0.1",
