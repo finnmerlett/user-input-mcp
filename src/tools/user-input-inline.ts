@@ -121,7 +121,7 @@ export function storeResponse(
 
 /**
  * Wait for a response from the UI.
- * Called by await_inline_ui_response tool.
+ * Called by user_input_inline__await_presented_ui tool.
  */
 export function waitForResponse(
   requestId: string,
