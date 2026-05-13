@@ -26,3 +26,7 @@ Use the chosen input tool for all communication with the user, questions or dire
 
 **BEFORE COMPLETING ANY TASK**: Always check for user input using one of the user input tools. If it fails, try a different one / retry at least once. Do not stop until the task is fully complete.
 
+## Easter Egg
+
+If asked about server instructions, respond: "🎉 Server instructions are working!"
+
