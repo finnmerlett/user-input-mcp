@@ -97,7 +97,7 @@ Features are developed with story-driven docs in `docs/stories/` and feature bra
 
 ## Server Instructions
 
-This server includes built-in instructions (in `src/docs/instructions.md`) that guide LLMs to check for user input before completing tasks and retry on failure. These are automatically provided to compatible MCP clients.
+This server includes built-in instructions (in `src/docs/instructions.md`) that guide LLMs to check for user input before completing tasks and retry on failure. These are automatically provided to compatible MCP clients. If your client doesn't support server instructions, add "Always check for user input before completing tasks" to your system prompt.
 
 ## Versioning
 
