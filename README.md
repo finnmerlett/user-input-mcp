@@ -1,28 +1,49 @@
 # User Input MCP Server
 
-A Model Context Protocol (MCP) server that provides tools for requesting input from users during AI-assisted workflows.
+An MCP server that lets AI agents ask you questions and get your input during tasks — via inline chat UI, Electron dialogs, or the MCP elicitation API.
 
-## Features
+## Quick Start
 
-- **Three input methods**: MCP Apps inline UI, GUI-based Electron dialogs, and MCP elicitation API
-- **MCP Apps integration**: Displays interactive HTML forms inline within chat interfaces (VS Code Insiders, Claude Desktop)
-- Built with TypeScript and the official MCP SDK
-- **No default timeout** - users can cancel via stop button; optional timeout via environment variable
-- Easy integration with any MCP client (Claude Desktop, VS Code, etc.)
-- Server instructions for autonomous agent integration
+Add to your VS Code MCP config (`.vscode/mcp.json`):
+```json
+{
+  "servers": {
+    "user-input": {
+      "command": "npx",
+      "args": ["-y", "user-input-mcp"]
+    }
+  }
+}
+```
+
+That's it. The AI agent can now ask you questions mid-task.
+
+## Tools
+
+### `user_input_inline__present_ui` ⭐ Recommended
+
+Rich inline UI in the chat (requires MCP Apps support — VS Code, Claude Desktop).
+
+Shows option buttons, free-text input, or both. Each option has an edit pen so you can add context. After calling, the agent must call `user_input_inline__await_presented_ui` with the returned `requestId` to get your response (this instruction is included in the present UI response).
+
+### `user_input_dialog`
+
+Opens an Electron GUI dialog window. Works anywhere with a display — no MCP Apps or elicitation support needed.
+
+### `user_input_elicitation`
+
+Uses the MCP elicitation API for native client-side input. Requires client elicitation capability.
 
 ## Configuration
 
-### Timeout Configuration
-
-By default, all user input tools have **no timeout** - the user can cancel at any time via the stop button. If you prefer to set a timeout, you can configure it via environment variable:
+**Timeout**: By default there's no timeout — cancel anytime via the stop button. To set one:
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "user-input": {
-      "command": "node",
-      "args": ["/path/to/user-input-mcp/build/index.js"],
+      "command": "npx",
+      "args": ["-y", "user-input-mcp"],
       "env": {
         "USER_INPUT_TIMEOUT_MINUTES": "60"
       }
@@ -31,257 +52,52 @@ By default, all user input tools have **no timeout** - the user can cancel at an
 }
 ```
 
-The `USER_INPUT_TIMEOUT_MINUTES` environment variable sets the timeout in minutes for all user input tools.
-
-## Installation
-
-### Local Development
-
-```bash
-npm install
-npm run build
-```
-
-### Global Installation
-
-```bash
-npm install -g .
-```
-
-Or link it locally:
-
-```bash
-npm link
-```
-
-## Usage
-
-### As an MCP Server
-
-Add to your MCP client configuration (e.g., `~/Library/Application Support/Claude/claude_desktop_config.json` or VS Code's `.vscode/mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "user-input": {
-      "command": "node",
-      "args": ["/path/to/user-input-mcp/build/index.js"]
-    }
-  }
-}
-```
-
-Or if installed globally:
-
-```json
-{
-  "mcpServers": {
-    "user-input": {
-      "command": "user-input-mcp"
-    }
-  }
-}
-```
-
-### Tool Usage
-
-The server provides three tools for requesting user input:
-
----
-
-#### `user_input_inline` ⭐ Recommended
-
-Displays an interactive HTML form inline within the chat interface using the MCP Apps protocol. Best for modern MCP clients that support MCP Apps (VS Code Insiders, Claude Desktop with MCP Apps support).
-
-- **Parameters**:
-  - `prompt` (required): The question or prompt to display to the user
-  - `title` (optional): A title for the input form
-  - `options` (optional): Array of quick-select button labels for common responses
-- **Features**:
-  - Inline rendering within the chat UI (no external windows)
-  - VS Code theme integration (light/dark mode)
-  - Auto-expanding multiline textarea
-  - Quick-select option buttons
-  - Enter to submit, Shift+Enter for new lines
-- **Two-tool pattern**: This tool returns immediately with a `requestId`. You must then call `await_inline_response` with that `requestId` to wait for and retrieve the user's actual input.
-
-**Example**:
-```json
-{
-  "name": "user_input_inline",
-  "arguments": {
-    "prompt": "How would you like to proceed?",
-    "title": "Next Steps",
-    "options": ["Continue", "Skip", "Cancel"]
-  }
-}
-```
-
----
-
-#### `await_inline_response`
-
-Waits for and retrieves the user's response from a `user_input_inline` call. This tool must be called after `user_input_inline` to get the actual user input.
-
-- **Parameters**:
-  - `requestId` (required): The `requestId` returned by `user_input_inline`
-- **Behavior**: Blocks until the user submits their response or cancels
-
-**Example**:
-```json
-{
-  "name": "await_inline_response",
-  "arguments": {
-    "requestId": "uuid-from-user_input_inline"
-  }
-}
-```
-
-**Response**:
-- On success: Returns the user's response text
-- On cancel: Returns a cancellation indicator
-- On timeout: Returns an error
-
----
-
-#### `user_input_dialog`
-
-A GUI-based tool that opens an Electron dialog window to collect user input. Best for standalone MCP servers or clients without built-in elicitation support.
-
-- **Parameters**:
-  - `prompt` (required): The prompt to display to the user
-  - `title` (optional): A title for the input dialog window
-- **Timeout**: No default timeout (configurable via `USER_INPUT_TIMEOUT_MINUTES` env var)
-
-**Example**:
-```json
-{
-  "name": "user_input_dialog",
-  "arguments": {
-    "prompt": "What is your preferred color scheme?",
-    "title": "Configuration"
-  }
-}
-```
-
----
-
-#### `user_input_elicitation`
-
-Uses the MCP elicitation API to request input directly through the client's native interface. Best for clients that support elicitation (like VS Code with MCP extension).
-
-- **Parameters**:
-  - `prompt` (required): The prompt to display to the user
-- **Timeout**: No default timeout (configurable via `USER_INPUT_TIMEOUT_MINUTES` env var)
-- **Requires**: Client elicitation capability
-
-**Example**:
-```json
-{
-  "name": "user_input_elicitation",
-  "arguments": {
-    "prompt": "Please describe the feature you want to implement"
-  }
-}
-```
-
-**Response Actions**:
-- `accept`: User provided input successfully
-- `decline`: User declined to provide the requested information
-- `cancel`: User cancelled the elicitation dialog
-
----
-
-### Choosing Between Tools
-
-| Feature | `user_input_inline` | `user_input_dialog` | `user_input_elicitation` |
-|---------|------------------|--------------|-------------------|
-| Interface | Inline HTML in chat | Electron GUI dialog | Client's native UI |
-| Theme support | ✅ VS Code themes | ❌ No | ⚠️ Partial |
-| Quick options | ✅ Yes | ❌ No | ❌ No |
-| Custom title | ✅ Yes | ✅ Yes | ❌ No |
-| Multiline input | ✅ Auto-expand | ❌ No | ❌ No |
-| Client support | MCP Apps capable | None | Elicitation capability |
-| Best for | VS Code Insiders, modern clients | Standalone, Claude Desktop | Basic MCP clients |
-
 ## Development
 
-### Build
 ```bash
+git clone https://github.com/finnmerlett/user-input-mcp.git
+cd user-input-mcp
+npm install
 npm run build
-```
-
-### Watch Mode
-```bash
-npm run watch
-```
-
-### Run Locally
-```bash
 npm start
 ```
 
-## How It Works
+To use your local build in an MCP config:
+```json
+{
+  "servers": {
+    "user-input": {
+      "command": "node",
+      "args": ["/absolute/path/to/user-input-mcp/build/index.js"]
+    }
+  }
+}
+```
 
-### `user_input_dialog` (Electron Dialog)
-
-1. The server launches an Electron dialog with the prompt
-2. The user enters their response in the dialog window
-3. The response is returned to the MCP client
-4. If no input is provided within 120 minutes, the request times out
-
-### `user_input_elicitation` (MCP Elicitation API)
-
-1. The server sends an elicitation request to the MCP client
-2. The client displays its native input UI (e.g., VS Code input box)
-3. The user's response is captured and returned
-4. Handles accept, decline, and cancel actions appropriately
-5. If no response within 10 minutes, the request times out
-
-## Server Instructions
-
-This MCP server includes built-in instructions for LLM/agent integration. The instructions guide agents to:
-
-- Always check for user input before completing tasks
-- Retry failed user input requests at least once
-- Continue working until the task is fully completed
-
-These instructions are automatically provided to compatible MCP clients.
-
-## Project Structure
+### Project Structure
 
 ```
 src/
-├── index.ts              # Main MCP server entry point
-├── docs/
-│   └── instructions.md   # Server instructions for LLM integration
+├── index.ts                       # MCP server entry point
+├── docs/instructions.md           # LLM/agent integration instructions
 ├── tools/
-│   ├── index.ts          # Tool exports and registry
-│   ├── types.ts          # TypeScript types
-│   ├── apps-user-input.ts    # MCP Apps inline form tool
-│   ├── electron-user-input.ts  # Electron GUI dialog tool
-│   └── elicitation.ts    # MCP elicitation API tool
+│   ├── user-input-inline.ts       # MCP Apps inline form tool
+│   ├── user-input-dialog.ts       # Electron GUI dialog tool
+│   ├── user-input-elicitation.ts  # MCP elicitation API tool
+│   └── zod-utils.ts               # Zod → JSON Schema conversion
 ├── ui/
-│   └── input-form.html   # MCP Apps inline form HTML
+│   └── App.tsx                    # Inline form React component
 └── utils/
-    └── instructions.ts   # Instructions loader utility
-docs/
-├── stories/              # Feature story documentation
-│   └── NNN-feature-name.md
-└── templates/
-    └── NNN-story-template.md
+    └── instructions.ts            # Instructions loader
 ```
 
-## Development Workflow
+### Workflow
 
-New features are developed using a story-driven workflow:
+Features are developed with story-driven docs in `docs/stories/` and feature branches named `feature/NNN-feature-name`.
 
-1. **Story Definition**: Each feature starts with a story document in `docs/stories/NNN-feature-name.md`
-2. **Branch Creation**: Feature branches are created from `main` with naming convention `feature/NNN-feature-name`
-3. **Iterative Development**: Story docs contain detailed task breakdowns with checkboxes for tracking progress
-4. **Review & Merge**: Stories are reviewed before merging back to `main`
+## Server Instructions
 
-See `docs/stories/` for active and completed feature stories.
+This server includes built-in instructions (in `src/docs/instructions.md`) that guide LLMs to check for user input before completing tasks and retry on failure. These are automatically provided to compatible MCP clients.
 
 ## License
 
