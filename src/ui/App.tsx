@@ -24,7 +24,6 @@ interface FormArgs {
   title?: string
   options?: string[]
   showAdditionalFreeInputButton?: boolean
-  preExpandTextInputBox?: boolean
 }
 
 type SubmitAction = 'option' | 'submit' | 'cancel'
@@ -55,7 +54,6 @@ export default function App() {
             title?: string
             options?: string[]
             showAdditionalFreeInputButton?: boolean
-            preExpandTextInputBox?: boolean
           }
           if (sc.requestId) {
             setRequestId(sc.requestId)
@@ -66,7 +64,6 @@ export default function App() {
               title: sc.title,
               options: sc.options,
               showAdditionalFreeInputButton: sc.showAdditionalFreeInputButton,
-              preExpandTextInputBox: sc.preExpandTextInputBox,
             })
           }
         }
@@ -80,10 +77,9 @@ export default function App() {
   
   // Form state
   const [submitted, setSubmitted] = useState(false)
-  // Only open input section by default if preExpandTextInputBox is true or no options
+  // Only open input section by default if no options
   const [inputSectionOpen, setInputSectionOpen] = useState(() => {
     // Evaluate initial state based on formArgs (which may be empty at first)
-    if (formArgs.preExpandTextInputBox) return true;
     if (formArgs.options && Array.isArray(formArgs.options) && formArgs.options.length > 0) return false;
     return true;
   });
@@ -121,7 +117,7 @@ export default function App() {
     }
   }, [requestId])
   
-  const { prompt, title, options, showAdditionalFreeInputButton, preExpandTextInputBox } = formArgs
+  const { prompt, title, options, showAdditionalFreeInputButton } = formArgs
   
   // Filter out options that match "something else" pattern (we add our own)
   const filteredOptions = useMemo(() => {
@@ -175,16 +171,16 @@ export default function App() {
     return numberPrefixCount >= 2 || letterPrefixCount >= 2
   })()
   
-  // Initialize input section state based on preExpandTextInputBox or hasOptions
+  // Initialize input section state based on hasOptions
   useEffect(() => {
-    // Only open input section if preExpandTextInputBox is true or there are no options
-    if (preExpandTextInputBox || !hasOptions) {
+    // Only open input section if there are no options
+    if (!hasOptions) {
       setInputSectionOpen(true)
       setInputSource('other')
     } else {
       setInputSectionOpen(false)
     }
-  }, [preExpandTextInputBox, hasOptions])
+  }, [hasOptions])
   
   // Focus textarea when input section opens
   useEffect(() => {
@@ -255,7 +251,7 @@ export default function App() {
     
     try {
       await app.callServerTool({
-        name: '__internal__submit_inline_response',
+        name: '__internal_do_not_use__submit_inline',
         arguments: {
           requestId,
           response: responseText,
@@ -402,7 +398,7 @@ export default function App() {
             </div>
           ))}
           
-          {hasOptions && (showAdditionalFreeInputButton !== false || preExpandTextInputBox) && (
+          {hasOptions && showAdditionalFreeInputButton !== false && (
             <button
               type="button"
               className={`option-button something-else-btn ${(inputSectionOpen && inputSource === 'other') || (submitted && !selectedOption && statusMessage && statusMessage !== 'Cancelled') ? 'active' : ''}`}

@@ -1,6 +1,6 @@
 
-import { spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { spawn, execSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
 import { z } from 'zod'
@@ -12,6 +12,60 @@ import { toJsonSchema } from './zod-utils.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+/**
+ * Finds the Electron binary path.
+ * Checks local node_modules first, then global. Downloads the binary on first use if needed.
+ */
+function findElectronPath(): string {
+  // Check locations in order: local node_modules (dependency), then global
+  const candidates: string[] = []
+
+  // Local node_modules (when electron is a dependency)
+  candidates.push(join(__dirname, '..', '..', 'node_modules', 'electron'))
+
+  // Global node_modules
+  try {
+    const globalRoot = execSync('npm root -g', { encoding: 'utf-8', timeout: 10000 }).trim()
+    candidates.push(join(globalRoot, 'electron'))
+  } catch {
+    // npm root -g failed, skip global
+  }
+
+  for (const electronModule of candidates) {
+    if (!existsSync(join(electronModule, 'index.js'))) continue
+
+    // Check path.txt (written by electron's install script when binary is downloaded)
+    const pathFile = join(electronModule, 'path.txt')
+    if (existsSync(pathFile)) {
+      const relativeBinary = readFileSync(pathFile, 'utf-8').trim()
+      const electronPath = join(electronModule, 'dist', relativeBinary)
+      if (existsSync(electronPath)) {
+        return electronPath
+      }
+    }
+
+    // Binary not downloaded yet — run electron's install script to download it
+    try {
+      execSync('node install.js', { cwd: electronModule, timeout: 120000, stdio: 'ignore' })
+    } catch {
+      continue
+    }
+
+    // Re-check path.txt after install
+    if (existsSync(pathFile)) {
+      const relativeBinary = readFileSync(pathFile, 'utf-8').trim()
+      const electronPath = join(electronModule, 'dist', relativeBinary)
+      if (existsSync(electronPath)) {
+        return electronPath
+      }
+    }
+  }
+
+  throw new Error(
+    'Electron binary could not be found or downloaded. Try reinstalling the package, or install electron globally with: npm install -g electron'
+  )
+}
 
 /**
  * Schema for user_input_dialog tool (Electron dialog-based input)
@@ -32,27 +86,12 @@ const UserInputDialogSchema = z.object({
 */
 async function promptUser(prompt: string, title?: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    // Get platform-specific Electron binary path
-    const electronModule = join(__dirname, '..', '..', 'node_modules', 'electron')
-    let electronPath: string
-    
-    if (process.platform === 'darwin') {
-      electronPath = join(electronModule, 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron')
-    } else if (process.platform === 'win32') {
-      electronPath = join(electronModule, 'dist', 'electron.exe')
-    } else {
-      electronPath = join(electronModule, 'dist', 'electron')
-    }
+    const electronPath = findElectronPath()
     
     // Use absolute path to the electron-prompt script
     const scriptPath = join(__dirname, '..', 'electron-prompt.cjs')
 
-    // Verify paths exist
-    if (!existsSync(electronPath)) {
-      reject(new Error(`Electron binary not found at: ${electronPath}`))
-      return
-    }
-
+    // Verify script exists
     if (!existsSync(scriptPath)) {
       reject(new Error(`Electron script not found at: ${scriptPath}`))
       return
@@ -102,7 +141,7 @@ async function promptUser(prompt: string, title?: string): Promise<string> {
 
 export const USER_INPUT_DIALOG_TOOL: ToolWithHandler = {
   name: 'user_input_dialog',
-  description: 'Request additional input from the user during generation using an Electron dialog window',
+  description: 'Opens an Electron GUI dialog for user input. The Electron binary is downloaded automatically on first use.',
   inputSchema: toJsonSchema(UserInputDialogSchema),
   handler: async (args: unknown): Promise<ServerResult> => {
     // Validate input with Zod
