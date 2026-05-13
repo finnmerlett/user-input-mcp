@@ -18,13 +18,6 @@ Add to your VS Code MCP config (`.vscode/mcp.json`):
 
 That's it. The AI agent can now ask you questions mid-task.
 
-### Optional: Electron Dialog Support
-
-To use the `user_input_dialog` tool (GUI popup window), install Electron globally:
-```bash
-npm install -g electron
-```
-
 ## Enforce Use For LLMs/Agents
 
 Making your agent always ask for input via this MCP can be tricky. Below is the most reliable approach we've found - but feel free to tweak as desired.
@@ -46,6 +39,7 @@ NEXT: now you may continue with whatever prompt or task you were assigned
 - Opus 4.6 and higher are better at remembering to ask for next steps even after long generations, but still aren't perfect.
 - GPT 5.4 / Gemini 3.1 and higher are decent at asking for user input, but tend to forget after longer autonomous generations and are known to stop prematurely.
 - Mileage may vary with lower-end models
+- VSCode Copilot Chat's Autopilot mode can help prevent premature chat terminations
 
 ## Tools
 
@@ -61,7 +55,7 @@ Uses the MCP elicitation API for native client-side input. Requires client elici
 
 ### `user_input_dialog`
 
-Opens an Electron GUI dialog window. Requires a separate global Electron install (`npm install -g electron`).
+Opens an Electron GUI dialog window. The Electron binary is downloaded automatically on first use (~150MB one-time download).
 
 ## Configuration
 

@@ -3,7 +3,7 @@
 ## Tools
 
 ### `user_input_dialog`
-Opens an Electron GUI dialog. Params: `prompt` (required), `title` (optional). Doesn't rely on MCP Apps or elicitation support.
+Opens an Electron GUI dialog. Params: `prompt` (required), `title` (optional). Electron binary auto-downloads on first use (~150MB). Doesn't rely on MCP Apps or elicitation support.
 
 ### `user_input_elicitation`
 Native client-side input (requires elicitation API capability). Params: `prompt` (required).

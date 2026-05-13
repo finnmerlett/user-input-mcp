@@ -22,7 +22,7 @@
     "cleanup": "rm -rf build",
     "build": "tsc && npm run build:ui",
     "build:ui": "mkdir -p build/ui && BUILD_ENTRY=input-form vite build",
-    "postbuild": "cp lib/*.cjs build/ && cp -r src/docs build/docs",
+    "postbuild": "cp lib/*.cjs build/ && cp -r src/docs build/docs && chmod +x build/index.js",
     "watch": "tsc --watch",
     "start": "node build/index.js",
     "prepublishOnly": "npm run build"
@@ -41,6 +41,7 @@
     "@modelcontextprotocol/ext-apps": "^1.0.1",
     "@modelcontextprotocol/sdk": "^1.25.2",
     "dompurify": "^3.3.1",
+    "electron": "^33.0.0",
     "marked": "^17.0.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

@@ -1,6 +1,6 @@
 
 import { spawn, execSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
 import { z } from 'zod'
@@ -15,41 +15,56 @@ const __dirname = dirname(__filename);
 
 /**
  * Finds the Electron binary path.
- * Checks local node_modules first, then global installation.
+ * Checks local node_modules first, then global. Downloads the binary on first use if needed.
  */
 function findElectronPath(): string {
-  // Try local node_modules (for development)
-  const localElectronModule = join(__dirname, '..', '..', 'node_modules', 'electron')
-  const localPath = getPlatformElectronPath(localElectronModule)
-  if (localPath && existsSync(localPath)) {
-    return localPath
+  // Check locations in order: local node_modules (dependency), then global
+  const candidates: string[] = []
+
+  // Local node_modules (when electron is a dependency)
+  candidates.push(join(__dirname, '..', '..', 'node_modules', 'electron'))
+
+  // Global node_modules
+  try {
+    const globalRoot = execSync('npm root -g', { encoding: 'utf-8', timeout: 10000 }).trim()
+    candidates.push(join(globalRoot, 'electron'))
+  } catch {
+    // npm root -g failed, skip global
   }
 
-  // Try global node_modules
-  try {
-    const globalRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim()
-    const globalElectronModule = join(globalRoot, 'electron')
-    const globalPath = getPlatformElectronPath(globalElectronModule)
-    if (globalPath && existsSync(globalPath)) {
-      return globalPath
+  for (const electronModule of candidates) {
+    if (!existsSync(join(electronModule, 'index.js'))) continue
+
+    // Check path.txt (written by electron's install script when binary is downloaded)
+    const pathFile = join(electronModule, 'path.txt')
+    if (existsSync(pathFile)) {
+      const relativeBinary = readFileSync(pathFile, 'utf-8').trim()
+      const electronPath = join(electronModule, 'dist', relativeBinary)
+      if (existsSync(electronPath)) {
+        return electronPath
+      }
     }
-  } catch {
-    // npm root -g failed, continue to error
+
+    // Binary not downloaded yet — run electron's install script to download it
+    try {
+      execSync('node install.js', { cwd: electronModule, timeout: 120000, stdio: 'ignore' })
+    } catch {
+      continue
+    }
+
+    // Re-check path.txt after install
+    if (existsSync(pathFile)) {
+      const relativeBinary = readFileSync(pathFile, 'utf-8').trim()
+      const electronPath = join(electronModule, 'dist', relativeBinary)
+      if (existsSync(electronPath)) {
+        return electronPath
+      }
+    }
   }
 
   throw new Error(
-    'Electron not found. Ask the user if they want to install it globally by running: npm install -g electron'
+    'Electron binary could not be found or downloaded. Try reinstalling the package, or install electron globally with: npm install -g electron'
   )
-}
-
-function getPlatformElectronPath(electronModule: string): string {
-  if (process.platform === 'darwin') {
-    return join(electronModule, 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron')
-  } else if (process.platform === 'win32') {
-    return join(electronModule, 'dist', 'electron.exe')
-  } else {
-    return join(electronModule, 'dist', 'electron')
-  }
 }
 
 /**
@@ -126,7 +141,7 @@ async function promptUser(prompt: string, title?: string): Promise<string> {
 
 export const USER_INPUT_DIALOG_TOOL: ToolWithHandler = {
   name: 'user_input_dialog',
-  description: 'Opens an Electron GUI dialog for user input. Requires global electron install (npm install -g electron).',
+  description: 'Opens an Electron GUI dialog for user input. The Electron binary is downloaded automatically on first use.',
   inputSchema: toJsonSchema(UserInputDialogSchema),
   handler: async (args: unknown): Promise<ServerResult> => {
     // Validate input with Zod
