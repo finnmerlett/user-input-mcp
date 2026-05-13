@@ -22,7 +22,7 @@
     "cleanup": "rm -rf build",
     "build": "tsc && npm run build:ui",
     "build:ui": "mkdir -p build/ui && BUILD_ENTRY=input-form vite build",
-    "postbuild": "cp lib/*.cjs build/ && cp -r src/docs build/docs && chmod +x build/index.js",
+    "postbuild": "cp lib/*.cjs build/ && rm -rf build/docs && cp -r src/docs build/docs && chmod +x build/index.js",
     "watch": "tsc --watch",
     "start": "node build/index.js",
     "prepublishOnly": "npm run build"
